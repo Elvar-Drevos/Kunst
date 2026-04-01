@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallery</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Libre+Franklin:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#08080A;
+    --surface:#111114;
+    --cream:#EDE8DF;
+    --dim:rgba(237,232,223,0.4);
+    --faint:rgba(237,232,223,0.15);
+    --ghost:rgba(237,232,223,0.06);
+    --accent:#B8956A;
+    --accent2:rgba(184,149,106,0.25);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Libre Franklin',sans-serif;color:var(--cream)}
+
+  /* ─── LAYOUT ─── */
+  .stage{width:100%;height:100%;display:grid;grid-template-columns:1fr auto;position:relative}
+
+  /* Ambient light behind artwork */
+  .glow{position:fixed;top:50%;left:40%;width:600px;height:600px;transform:translate(-50%,-50%);
+    background:radial-gradient(circle,rgba(184,149,106,0.04) 0%,transparent 70%);
+    pointer-events:none;z-index:0;transition:opacity 3s ease;opacity:0}
+  .glow.on{opacity:1}
+
+  /* Vignette */
+  .stage::after{content:'';position:fixed;inset:0;
+    background:radial-gradient(ellipse at 40% 50%,transparent 40%,rgba(0,0,0,0.7) 100%);
+    pointer-events:none;z-index:4}
+
+  /* ─── LEFT: ARTWORK ─── */
+  .art-side{display:flex;align-items:center;justify-content:center;position:relative;z-index:2;padding:40px 20px 40px 50px}
+
+  .mount{position:relative;opacity:0;transform:scale(0.97);transition:opacity 2s ease,transform 2s ease}
+  .mount.show{opacity:1;transform:scale(1)}
+  .mount.hide{opacity:0;transform:scale(0.97) translateY(-8px)}
+
+  .shadow-box{
+    padding:14px;
+    background:linear-gradient(160deg,#1E1C19,#15130F,#1E1C19);
+    box-shadow:0 0 0 1px var(--accent2),0 8px 40px rgba(0,0,0,0.7),0 30px 80px rgba(0,0,0,0.4);
+    border-radius:1px;position:relative;
+  }
+  .shadow-box::before{content:'';position:absolute;inset:4px;border:1px solid var(--accent2);pointer-events:none}
+  .shadow-box::after{content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,0.02) 0%,transparent 30%,transparent 70%,rgba(0,0,0,0.1) 100%);
+    pointer-events:none;border-radius:1px}
+
+  .pic-wrap{position:relative;overflow:hidden;background:var(--surface);line-height:0}
+  .pic{max-width:55vw;max-height:70vh;display:block;opacity:0;transition:opacity 2s ease;object-fit:contain}
+  .pic.in{opacity:1;animation:drift 40s ease-in-out forwards}
+
+  .shimmer{position:absolute;inset:0;min-width:350px;min-height:250px;
+    background:linear-gradient(110deg,var(--surface) 30%,rgba(255,255,255,0.02) 50%,var(--surface) 70%);
+    background-size:200% 100%;animation:shm 2s ease-in-out infinite}
+  .shimmer.off{display:none}
+  @keyframes shm{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+  /* ─── RIGHT: INFO PANEL ─── */
+  .info-side{width:340px;display:flex;flex-direction:column;justify-content:flex-end;
+    padding:50px 44px 50px 30px;position:relative;z-index:5;
+    border-left:1px solid var(--ghost);
+    opacity:0;transform:translateX(15px);transition:opacity 1.5s ease,transform 1.5s ease}
+  .info-side.show{opacity:1;transform:translateX(0)}
+  .info-side.hide{opacity:0;transform:translateX(10px)}
+
+  .info-number{font-family:'Playfair Display',serif;font-size:72px;font-weight:400;
+    color:var(--ghost);line-height:1;margin-bottom:30px;font-style:italic}
+
+  .info-divider{width:30px;height:1px;background:var(--accent);margin-bottom:24px;
+    transform-origin:left;transform:scaleX(0);transition:transform 1s 0.5s ease}
+  .info-side.show .info-divider{transform:scaleX(1)}
+
+  .info-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:400;
+    font-style:italic;line-height:1.4;margin-bottom:16px;letter-spacing:0.3px;color:var(--cream)}
+
+  .info-artist{font-size:11px;font-weight:500;color:var(--accent);
+    letter-spacing:4px;text-transform:uppercase;margin-bottom:20px}
+
+  .info-meta{font-size:10px;font-weight:300;color:var(--faint);line-height:1.8;letter-spacing:0.5px}
+
+  .info-src{font-size:8px;font-weight:400;color:var(--ghost);
+    letter-spacing:3px;text-transform:uppercase;margin-top:auto;padding-top:40px}
+
+  /* ─── PROGRESS ─── */
+  .bar{position:fixed;bottom:0;left:0;width:100%;height:2px;background:var(--ghost);z-index:10}
+  .bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--dim))}
+
+  /* ─── ANIMATIONS ─── */
+  @keyframes drift{
+    0%{transform:scale(1) translate(0,0)}
+    50%{transform:scale(1.05) translate(-0.5%,-0.5%)}
+    100%{transform:scale(1.08) translate(-1%,0.5%)}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="glow" id="gw"></div>
+
+  <div class="art-side">
+    <div class="mount" id="mt">
+      <div class="shadow-box"><div class="pic-wrap">
+        <div class="shimmer" id="sh"></div>
+        <img class="pic" id="pic" alt="">
+      </div></div>
+    </div>
+  </div>
+
+  <div class="info-side" id="inf">
+    <div class="info-number" id="num">01</div>
+    <div class="info-divider"></div>
+    <div class="info-title" id="ttl"></div>
+    <div class="info-artist" id="who"></div>
+    <div class="info-meta" id="meta"></div>
+    <div class="info-src">Art Institute of Chicago</div>
+  </div>
+
+  <div class="bar"><div class="bar-fill" id="bf"></div></div>
+</div>
+
+<script>
+var SHOW=30000,FADE=2000;
+var n=0,q=[],iiif='https://www.artic.edu/iiif/2',busy=false;
+
+// Diverse categorien voor variatie
+var categories=['painting','sculpture','photography','print','textile','ceramic','drawing','watercolor','landscape','portrait','abstract','still life','architecture','japanese','chinese','impressionism','modern','medieval'];
+
+function grab(){
+  var cat=categories[Math.floor(Math.random()*categories.length)];
+  var pg=Math.floor(Math.random()*20)+1;
+  var x=new XMLHttpRequest();
+  x.open('GET','https://api.artic.edu/api/v1/artworks/search?q='+encodeURIComponent(cat)+'&query[term][is_public_domain]=true&page='+pg+'&limit=12&fields=id,title,artist_display,date_display,medium_display,image_id,artwork_type_title',true);
+  x.timeout=15000;
+  x.onload=function(){
+    if(x.status>=200&&x.status<300){
+      try{
+        var r=JSON.parse(x.responseText);
+        if(r.config&&r.config.iiif_url)iiif=r.config.iiif_url;
+        if(r.data){
+          var ok=r.data.filter(function(a){return a.image_id});
+          q=q.concat(ok);
+          if(n===0&&q.length>0&&!busy)go();
+        }
+      }catch(e){}
+    }
+  };
+  x.onerror=function(){};
+  x.send();
+}
+
+function iurl(id){return iiif+'/'+id+'/full/843,/0/default.jpg'}
+
+function go(){
+  if(q.length===0){grab();setTimeout(go,4000);return}
+  busy=true;
+
+  var i=Math.floor(Math.random()*q.length);
+  var a=q.splice(i,1)[0];
+  n++;
+
+  var mt=document.getElementById('mt');
+  var inf=document.getElementById('inf');
+  var gw=document.getElementById('gw');
+  var pic=document.getElementById('pic');
+  var sh=document.getElementById('sh');
+  var bf=document.getElementById('bf');
+
+  // Reset
+  mt.className='mount';
+  inf.className='info-side';
+  gw.className='glow';
+  pic.className='pic';
+  pic.removeAttribute('src');
+  sh.className='shimmer';
+  bf.style.transition='none';
+  bf.style.width='0%';
+
+  // Fill info
+  document.getElementById('num').textContent=n<10?'0'+n:''+n;
+  document.getElementById('ttl').textContent=a.title||'Untitled';
+  document.getElementById('who').textContent=(a.artist_display||'Unknown').split('\n')[0];
+
+  var lines=[];
+  if(a.date_display)lines.push(a.date_display);
+  if(a.artwork_type_title)lines.push(a.artwork_type_title);
+  if(a.medium_display)lines.push(a.medium_display);
+  document.getElementById('meta').innerHTML=lines.join('<br>');
+
+  // Load
+  var tmp=new Image();
+  tmp.onload=function(){
+    pic.src=tmp.src;
+    sh.className='shimmer off';
+    pic.className='pic in';
+
+    setTimeout(function(){mt.className='mount show';gw.className='glow on'},100);
+    setTimeout(function(){inf.className='info-side show'},600);
+
+    setTimeout(function(){
+      bf.style.transition='width '+(SHOW/1000)+'s linear';
+      bf.style.width='100%';
+    },200);
+
+    setTimeout(function(){
+      mt.className='mount hide';
+      inf.className='info-side hide';
+      gw.className='glow';
+      setTimeout(function(){busy=false;go()},FADE);
+    },SHOW);
+  };
+
+  tmp.onerror=function(){busy=false;go()};
+  tmp.src=iurl(a.image_id);
+
+  if(q.length<5)grab();
+}
+
+// Start met meerdere categorien
+grab();
+setTimeout(grab,1500);
+setTimeout(grab,3000);
+</script>
+</body>
+</html>
