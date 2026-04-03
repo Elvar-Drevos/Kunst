@@ -1,230 +1,882 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gallery</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Libre+Franklin:wght@200;300;400;500&display=swap" rel="stylesheet">
+<title>Zwolle - Vertrekkende treinen</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
   :root {
-    --bg:#08080A;
-    --surface:#111114;
-    --cream:#EDE8DF;
-    --dim:rgba(237,232,223,0.4);
-    --faint:rgba(237,232,223,0.15);
-    --ghost:rgba(237,232,223,0.06);
-    --accent:#B8956A;
-    --accent2:rgba(184,149,106,0.25);
+    --ns-blue: #003082;
+    --ns-blue-dark: #00194a;
+    --ns-blue-deep: #000f2e;
+    --ns-yellow: #ffc917;
+    --ns-yellow-dark: #d4a600;
+    --row-bg-1: #061b3a;
+    --row-bg-2: #0a2244;
+    --delay-red: #ff3333;
+    --cancelled-red: #cc0000;
+    --green: #00cc66;
+    --text-primary: #ffffff;
+    --text-muted: #8a9fc0;
+    --border: #13305a;
   }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:'Libre Franklin',sans-serif;color:var(--cream)}
 
-  /* ─── LAYOUT ─── */
-  .stage{width:100%;height:100%;display:grid;grid-template-columns:1fr auto;position:relative}
-
-  /* Ambient light behind artwork */
-  .glow{position:fixed;top:50%;left:40%;width:600px;height:600px;transform:translate(-50%,-50%);
-    background:radial-gradient(circle,rgba(184,149,106,0.04) 0%,transparent 70%);
-    pointer-events:none;z-index:0;transition:opacity 3s ease;opacity:0}
-  .glow.on{opacity:1}
-
-  /* Vignette */
-  .stage::after{content:'';position:fixed;inset:0;
-    background:radial-gradient(ellipse at 40% 50%,transparent 40%,rgba(0,0,0,0.7) 100%);
-    pointer-events:none;z-index:4}
-
-  /* ─── LEFT: ARTWORK ─── */
-  .art-side{display:flex;align-items:center;justify-content:center;position:relative;z-index:2;padding:40px 20px 40px 50px}
-
-  .mount{position:relative;opacity:0;transform:scale(0.97);transition:opacity 2s ease,transform 2s ease}
-  .mount.show{opacity:1;transform:scale(1)}
-  .mount.hide{opacity:0;transform:scale(0.97) translateY(-8px)}
-
-  .shadow-box{
-    padding:14px;
-    background:linear-gradient(160deg,#1E1C19,#15130F,#1E1C19);
-    box-shadow:0 0 0 1px var(--accent2),0 8px 40px rgba(0,0,0,0.7),0 30px 80px rgba(0,0,0,0.4);
-    border-radius:1px;position:relative;
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: var(--ns-blue-deep);
+    font-family: 'Fira Sans', sans-serif;
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
   }
-  .shadow-box::before{content:'';position:absolute;inset:4px;border:1px solid var(--accent2);pointer-events:none}
-  .shadow-box::after{content:'';position:absolute;inset:0;
-    background:linear-gradient(180deg,rgba(255,255,255,0.02) 0%,transparent 30%,transparent 70%,rgba(0,0,0,0.1) 100%);
-    pointer-events:none;border-radius:1px}
 
-  .pic-wrap{position:relative;overflow:hidden;background:var(--surface);line-height:0}
-  .pic{max-width:55vw;max-height:70vh;display:block;opacity:0;transition:opacity 2s ease;object-fit:contain}
-  .pic.in{opacity:1;animation:drift 40s ease-in-out forwards}
-
-  .shimmer{position:absolute;inset:0;min-width:350px;min-height:250px;
-    background:linear-gradient(110deg,var(--surface) 30%,rgba(255,255,255,0.02) 50%,var(--surface) 70%);
-    background-size:200% 100%;animation:shm 2s ease-in-out infinite}
-  .shimmer.off{display:none}
-  @keyframes shm{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-  /* ─── RIGHT: INFO PANEL ─── */
-  .info-side{width:340px;display:flex;flex-direction:column;justify-content:flex-end;
-    padding:50px 44px 50px 30px;position:relative;z-index:5;
-    border-left:1px solid var(--ghost);
-    opacity:0;transform:translateX(15px);transition:opacity 1.5s ease,transform 1.5s ease}
-  .info-side.show{opacity:1;transform:translateX(0)}
-  .info-side.hide{opacity:0;transform:translateX(10px)}
-
-  .info-number{font-family:'Playfair Display',serif;font-size:72px;font-weight:400;
-    color:var(--ghost);line-height:1;margin-bottom:30px;font-style:italic}
-
-  .info-divider{width:30px;height:1px;background:var(--accent);margin-bottom:24px;
-    transform-origin:left;transform:scaleX(0);transition:transform 1s 0.5s ease}
-  .info-side.show .info-divider{transform:scaleX(1)}
-
-  .info-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:400;
-    font-style:italic;line-height:1.4;margin-bottom:16px;letter-spacing:0.3px;color:var(--cream)}
-
-  .info-artist{font-size:11px;font-weight:500;color:var(--accent);
-    letter-spacing:4px;text-transform:uppercase;margin-bottom:20px}
-
-  .info-meta{font-size:10px;font-weight:300;color:var(--faint);line-height:1.8;letter-spacing:0.5px}
-
-  .info-src{font-size:8px;font-weight:400;color:var(--ghost);
-    letter-spacing:3px;text-transform:uppercase;margin-top:auto;padding-top:40px}
-
-  /* ─── PROGRESS ─── */
-  .bar{position:fixed;bottom:0;left:0;width:100%;height:2px;background:var(--ghost);z-index:10}
-  .bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--dim))}
-
-  /* ─── ANIMATIONS ─── */
-  @keyframes drift{
-    0%{transform:scale(1) translate(0,0)}
-    50%{transform:scale(1.05) translate(-0.5%,-0.5%)}
-    100%{transform:scale(1.08) translate(-1%,0.5%)}
+  .board {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
   }
+
+  /* ========== HEADER ========== */
+  .header {
+    background: linear-gradient(135deg, var(--ns-yellow) 0%, #e6b400 60%, var(--ns-yellow-dark) 100%);
+    padding: 1.2vh 2.5vw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 8vh;
+    box-shadow: 0 0.5vh 2vh rgba(0,0,0,0.4);
+    position: relative;
+    z-index: 10;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.2vw;
+  }
+
+  .ns-logo {
+    width: 5vh;
+    height: 5vh;
+    background: var(--ns-blue);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0.2vh 0.6vh rgba(0,0,0,0.3);
+  }
+
+  .ns-logo svg {
+    width: 3vh;
+    height: 3vh;
+    fill: var(--ns-yellow);
+  }
+
+  .header-title {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .station-name {
+    font-size: 3vh;
+    font-weight: 800;
+    color: var(--ns-blue-dark);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .station-subtitle {
+    font-size: 1.4vh;
+    color: #5a4200;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 0.2vh;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5vw;
+  }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4vw;
+    background: var(--ns-blue);
+    padding: 0.4vh 0.8vw;
+    border-radius: 0.4vh;
+  }
+
+  .live-dot {
+    width: 1vh;
+    height: 1vh;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-live 2s ease-in-out infinite;
+  }
+
+  .live-dot.error { background: var(--delay-red); }
+
+  .live-text {
+    font-size: 1.3vh;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  @keyframes pulse-live {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,204,102,0.6); }
+    50% { opacity: 0.6; box-shadow: 0 0 0 0.4vh rgba(0,204,102,0); }
+  }
+
+  .clock {
+    font-size: 3.4vh;
+    font-weight: 800;
+    color: var(--ns-blue-dark);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .clock-sec {
+    font-size: 2vh;
+    font-weight: 600;
+    opacity: 0.6;
+  }
+
+  /* ========== TABLE HEADER ========== */
+  .col-header {
+    display: grid;
+    grid-template-columns: 9vw 7vw 1fr 1fr 10vw;
+    padding: 0.8vh 2.5vw;
+    background: var(--ns-blue);
+    border-bottom: 0.25vh solid var(--ns-yellow);
+    height: 4vh;
+    align-items: center;
+  }
+
+  .col-header span {
+    font-size: 1.3vh;
+    font-weight: 700;
+    color: var(--ns-yellow);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+
+  /* ========== DEPARTURE ROWS ========== */
+  .dep-list {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .dep-row {
+    display: grid;
+    grid-template-columns: 9vw 7vw 1fr 1fr 10vw;
+    padding: 0 2.5vw;
+    height: 7vh;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    animation: row-in 0.35s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes row-in {
+    from { opacity: 0; transform: translateX(-1vw); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .dep-row:nth-child(odd) { background: var(--row-bg-1); }
+  .dep-row:nth-child(even) { background: var(--row-bg-2); }
+
+  .dep-row.is-cancelled {
+    opacity: 0.45;
+  }
+
+  .dep-row.is-cancelled .dest-name,
+  .dep-row.is-cancelled .time-val {
+    text-decoration: line-through;
+    text-decoration-color: var(--cancelled-red);
+    text-decoration-thickness: 0.2vh;
+  }
+
+  /* Time */
+  .time-col {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .time-val {
+    font-size: 2.5vh;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .time-delay {
+    font-size: 1.5vh;
+    font-weight: 700;
+    color: var(--delay-red);
+  }
+
+  .time-delay.blink {
+    animation: blink 1.2s steps(2) infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0.3; }
+  }
+
+  .cancel-tag {
+    font-size: 1.2vh;
+    font-weight: 800;
+    color: var(--cancelled-red);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(204,0,0,0.15);
+    padding: 0.1vh 0.4vw;
+    border-radius: 0.2vh;
+    display: inline-block;
+  }
+
+  /* Platform */
+  .plat-col {
+    display: flex;
+    justify-content: center;
+  }
+
+  .plat-num {
+    width: 4vh;
+    height: 4vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0.2vh solid var(--ns-yellow);
+    border-radius: 0.4vh;
+    font-size: 2.2vh;
+    font-weight: 800;
+    color: var(--ns-yellow);
+    background: rgba(0,48,130,0.6);
+  }
+
+  .plat-num.changed {
+    background: var(--delay-red);
+    border-color: var(--delay-red);
+    color: #fff;
+    animation: plat-flash 0.8s ease infinite;
+  }
+
+  @keyframes plat-flash {
+    50% { transform: scale(1.1); }
+  }
+
+  /* Destination */
+  .dest-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2vh;
+    overflow: hidden;
+  }
+
+  .dest-name {
+    font-size: 2.3vh;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dest-operator {
+    font-size: 1.2vh;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  /* Via */
+  .via-col {
+    font-size: 1.6vh;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 0.5vw;
+  }
+
+  .via-label {
+    color: var(--ns-yellow);
+    font-weight: 600;
+    margin-right: 0.3vw;
+    font-size: 1.3vh;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Type */
+  .type-col {
+    display: flex;
+    align-items: center;
+  }
+
+  .type-pill {
+    padding: 0.3vh 0.7vw;
+    border-radius: 0.3vh;
+    font-size: 1.3vh;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+
+  .pill-IC  { background: #0059a6; color: #fff; }
+  .pill-SPR { background: #1a6e3a; color: #fff; }
+  .pill-INT { background: #6b2d80; color: #fff; }
+  .pill-ICE { background: #b30000; color: #fff; }
+  .pill-ST  { background: #4a4a4a; color: #fff; }
+  .pill-BUS { background: #00707a; color: #fff; }
+  .pill-default { background: #2a4570; color: #ccc; }
+
+  /* ========== FOOTER ========== */
+  .footer {
+    background: var(--ns-blue);
+    border-top: 0.25vh solid var(--ns-yellow);
+    height: 5vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 0 2.5vw;
+  }
+
+  .footer-tag {
+    flex-shrink: 0;
+    background: var(--ns-yellow);
+    color: var(--ns-blue-dark);
+    padding: 0.3vh 0.8vw;
+    font-size: 1.2vh;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-radius: 0.2vh;
+    margin-right: 1.5vw;
+  }
+
+  .ticker-wrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .ticker {
+    display: inline-block;
+    white-space: nowrap;
+    animation: scroll-ticker 45s linear infinite;
+    font-size: 1.6vh;
+    color: #d0dcea;
+    font-weight: 400;
+  }
+
+  .ticker b {
+    color: var(--ns-yellow);
+    font-weight: 600;
+  }
+
+  .ticker .sep {
+    margin: 0 2vw;
+    color: #3a5a8c;
+  }
+
+  @keyframes scroll-ticker {
+    from { transform: translateX(60vw); }
+    to   { transform: translateX(-100%); }
+  }
+
+  /* ========== STATES ========== */
+  .loader {
+    position: absolute;
+    inset: 0;
+    background: var(--ns-blue-deep);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2vh;
+    z-index: 50;
+    transition: opacity 0.6s ease;
+  }
+
+  .loader.gone { opacity: 0; pointer-events: none; }
+
+  .spin {
+    width: 5vh;
+    height: 5vh;
+    border: 0.35vh solid var(--border);
+    border-top-color: var(--ns-yellow);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loader-msg {
+    font-size: 1.8vh;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 2.2vh;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .err-toast {
+    position: fixed;
+    bottom: 7vh;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(180,0,0,0.92);
+    padding: 0.8vh 1.5vw;
+    border-radius: 0.4vh;
+    font-size: 1.4vh;
+    font-weight: 500;
+    z-index: 60;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+
+  .err-toast.show { opacity: 1; }
 </style>
 </head>
 <body>
-<div class="stage">
-  <div class="glow" id="gw"></div>
 
-  <div class="art-side">
-    <div class="mount" id="mt">
-      <div class="shadow-box"><div class="pic-wrap">
-        <div class="shimmer" id="sh"></div>
-        <img class="pic" id="pic" alt="">
-      </div></div>
+<div class="board">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="ns-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8 2 4 3.5 4 7v9.5C4 18.43 5.57 20 7.5 20L6 21.5v.5h2l2-2h4l2 2h2v-.5L16.5 20c1.93 0 3.5-1.57 3.5-3.5V7c0-3.5-4-5-8-5zm-4 14c-.83 0-1.5-.67-1.5-1.5S7.17 13 8 13s1.5.67 1.5 1.5S8.83 16 8 16zm3-7H6V7h5v2zm2 0V7h5v2h-5zm3 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+      </div>
+      <div class="header-title">
+        <div class="station-name">Zwolle</div>
+        <div class="station-subtitle">Vertrekkende treinen</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge">
+        <div class="live-dot" id="liveDot"></div>
+        <div class="live-text">Live</div>
+      </div>
+      <div class="clock" id="clock">--:--<span class="clock-sec">:--</span></div>
     </div>
   </div>
 
-  <div class="info-side" id="inf">
-    <div class="info-number" id="num">01</div>
-    <div class="info-divider"></div>
-    <div class="info-title" id="ttl"></div>
-    <div class="info-artist" id="who"></div>
-    <div class="info-meta" id="meta"></div>
-    <div class="info-src">Art Institute of Chicago</div>
+  <!-- COL HEADER -->
+  <div class="col-header">
+    <span>Vertrek</span>
+    <span>Spoor</span>
+    <span>Bestemming</span>
+    <span>Via</span>
+    <span>Vervoer</span>
   </div>
 
-  <div class="bar"><div class="bar-fill" id="bf"></div></div>
+  <!-- ROWS -->
+  <div class="dep-list" id="depList">
+    <div class="loader" id="loader">
+      <div class="spin"></div>
+      <div class="loader-msg">Vertrektijden laden...</div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-tag">Reisinformatie</div>
+    <div class="ticker-wrap">
+      <div class="ticker" id="ticker">
+        Welkom op station Zwolle <span class="sep">|</span>
+        Vertrektijden worden elke 30 seconden ververst <span class="sep">|</span>
+        Reisinformatie: 0900-9292 <span class="sep">|</span>
+        Kijk op 9292.nl voor uw reisplan
+      </div>
+    </div>
+  </div>
 </div>
 
+<div class="err-toast" id="errToast"></div>
+
 <script>
-var SHOW=30000,FADE=2000;
-var n=0,q=[],iiif='https://www.artic.edu/iiif/2',busy=false;
+(function(){
+  'use strict';
 
-// Diverse categorien voor variatie
-var categories=['painting','sculpture','photography','print','textile','ceramic','drawing','watercolor','landscape','portrait','abstract','still life','architecture','japanese','chinese','impressionism','modern','medieval'];
+  /* ====== CONFIG ====== */
+  // IMPORTANT: OVapi werkt met stopareacode of tpc.
+  // Treinen op Zwolle zitten waarschijnlijk NIET in OVapi (die doet bus/tram/metro).
+  // We gebruiken daarom TWEE bronnen:
+  //   1. Primair: treinposities.nl API (gratis, geen key nodig, trein-specifiek)
+  //   2. Fallback: OVapi stopareacode 'zl' (voor eventuele bus data)
+  //
+  // Als treinposities.nl niet werkt vanwege CORS, schakel dan over naar de
+  // CORS_PROXY. Op Yodeck (Chromium kiosk) is CORS vaak geen issue.
 
-function grab(){
-  var cat=categories[Math.floor(Math.random()*categories.length)];
-  var pg=Math.floor(Math.random()*20)+1;
-  var x=new XMLHttpRequest();
-  x.open('GET','https://api.artic.edu/api/v1/artworks/search?q='+encodeURIComponent(cat)+'&query[term][is_public_domain]=true&page='+pg+'&limit=12&fields=id,title,artist_display,date_display,medium_display,image_id,artwork_type_title',true);
-  x.timeout=15000;
-  x.onload=function(){
-    if(x.status>=200&&x.status<300){
-      try{
-        var r=JSON.parse(x.responseText);
-        if(r.config&&r.config.iiif_url)iiif=r.config.iiif_url;
-        if(r.data){
-          var ok=r.data.filter(function(a){return a.image_id});
-          q=q.concat(ok);
-          if(n===0&&q.length>0&&!busy)go();
-        }
-      }catch(e){}
+  const STATION = 'zl';  // NS stationscode Zwolle
+  const REFRESH = 30000;
+  const MAX_ROWS = 11;   // past op 1080p scherm
+
+  // Proxy opties - probeer ze in volgorde
+  const PROXIES = [
+    '',                                    // Direct (werkt op Yodeck)
+    'https://corsproxy.io/?',              // Proxy 1
+    'https://api.allorigins.win/raw?url=', // Proxy 2
+  ];
+
+  // Data source endpoints
+  const SOURCES = {
+    treinposities: 'https://treinposities.nl/api/departures/zwolle',
+    ovapi: 'https://v0.ovapi.nl/stopareacode/' + STATION + '/departures'
+  };
+
+  let proxyIndex = 0;
+  let currentSource = 'treinposities';
+  let firstLoad = true;
+  let errCount = 0;
+
+  /* ====== CLOCK ====== */
+  function tick() {
+    const n = new Date();
+    const el = document.getElementById('clock');
+    if (!el) return;
+    el.innerHTML =
+      pad(n.getHours()) + ':' + pad(n.getMinutes()) +
+      '<span class="clock-sec">:' + pad(n.getSeconds()) + '</span>';
+  }
+  function pad(v) { return String(v).padStart(2,'0'); }
+  setInterval(tick, 1000);
+  tick();
+
+  /* ====== FETCH ====== */
+  async function tryFetch(url) {
+    // Try each proxy until one works
+    for (let i = 0; i < PROXIES.length; i++) {
+      const idx = (proxyIndex + i) % PROXIES.length;
+      const proxy = PROXIES[idx];
+      const fullUrl = proxy ? proxy + encodeURIComponent(url) : url;
+      
+      try {
+        const r = await fetch(fullUrl, {
+          headers: { 'Accept': 'application/json' },
+          cache: 'no-store',
+          signal: AbortSignal.timeout(8000)
+        });
+        if (!r.ok) continue;
+        const data = await r.json();
+        proxyIndex = idx; // remember working proxy
+        return data;
+      } catch(e) {
+        continue;
+      }
     }
-  };
-  x.onerror=function(){};
-  x.send();
-}
+    return null;
+  }
 
-function iurl(id){return iiif+'/'+id+'/full/843,/0/default.jpg'}
+  /* ====== PARSE: treinposities.nl ====== */
+  function parseTreinposities(data) {
+    // treinposities.nl returns an array of departure objects
+    if (!data) return null;
+    
+    const arr = Array.isArray(data) ? data : (data.departures || data.data || []);
+    if (!arr.length) return null;
 
-function go(){
-  if(q.length===0){grab();setTimeout(go,4000);return}
-  busy=true;
+    return arr.map(d => ({
+      time: d.time || d.departure_time || '',
+      timeMs: parseTimeToMs(d.time || d.departure_time || ''),
+      delay: d.delay || 0,
+      cancelled: d.cancelled || false,
+      platform: d.platform || d.track || '',
+      platformChanged: d.platform_changed || d.platformChanged || false,
+      destination: d.destination || d.direction || '',
+      via: d.via || '',
+      type: d.type || d.category || 'Trein',
+      typeCode: inferTypeCode(d.type || d.category || d.type_code || ''),
+      line: d.line || d.service || '',
+      operator: d.company || d.operator || '',
+      remarks: d.remarks || d.tips || []
+    }));
+  }
 
-  var i=Math.floor(Math.random()*q.length);
-  var a=q.splice(i,1)[0];
-  n++;
+  /* ====== PARSE: OVapi ====== */
+  function parseOvapi(data) {
+    if (!data || typeof data !== 'object') return null;
 
-  var mt=document.getElementById('mt');
-  var inf=document.getElementById('inf');
-  var gw=document.getElementById('gw');
-  var pic=document.getElementById('pic');
-  var sh=document.getElementById('sh');
-  var bf=document.getElementById('bf');
+    const deps = [];
+    const now = Date.now();
 
-  // Reset
-  mt.className='mount';
-  inf.className='info-side';
-  gw.className='glow';
-  pic.className='pic';
-  pic.removeAttribute('src');
-  sh.className='shimmer';
-  bf.style.transition='none';
-  bf.style.width='0%';
+    // Walk nested structure: { tpcCode: { Passes: { passId: {...} } } }
+    for (const key1 of Object.keys(data)) {
+      const level1 = data[key1];
+      if (!level1 || typeof level1 !== 'object') continue;
 
-  // Fill info
-  document.getElementById('num').textContent=n<10?'0'+n:''+n;
-  document.getElementById('ttl').textContent=a.title||'Untitled';
-  document.getElementById('who').textContent=(a.artist_display||'Unknown').split('\n')[0];
+      // Could be { Passes: ... } or { tpcCode: { Passes: ... } }
+      const sources = level1.Passes ? [level1] :
+        Object.values(level1).filter(v => v && v.Passes);
 
-  var lines=[];
-  if(a.date_display)lines.push(a.date_display);
-  if(a.artwork_type_title)lines.push(a.artwork_type_title);
-  if(a.medium_display)lines.push(a.medium_display);
-  document.getElementById('meta').innerHTML=lines.join('<br>');
+      for (const src of sources) {
+        if (!src.Passes) continue;
+        for (const pk of Object.keys(src.Passes)) {
+          const p = src.Passes[pk];
+          if (!p) continue;
 
-  // Load
-  var tmp=new Image();
-  tmp.onload=function(){
-    pic.src=tmp.src;
-    sh.className='shimmer off';
-    pic.className='pic in';
+          const exp = p.ExpectedDepartureTime;
+          const plan = p.TargetDepartureTime;
+          if (!exp && !plan) continue;
 
-    setTimeout(function(){mt.className='mount show';gw.className='glow on'},100);
-    setTimeout(function(){inf.className='info-side show'},600);
+          const depDate = new Date(exp || plan);
+          if (isNaN(depDate.getTime())) continue;
+          if (depDate.getTime() < now - 120000) continue; // skip past
 
-    setTimeout(function(){
-      bf.style.transition='width '+(SHOW/1000)+'s linear';
-      bf.style.width='100%';
-    },200);
+          const planDate = plan ? new Date(plan) : depDate;
+          const delayMin = Math.max(0, Math.round((depDate - planDate) / 60000));
 
-    setTimeout(function(){
-      mt.className='mount hide';
-      inf.className='info-side hide';
-      gw.className='glow';
-      setTimeout(function(){busy=false;go()},FADE);
-    },SHOW);
-  };
+          deps.push({
+            time: pad(planDate.getHours()) + ':' + pad(planDate.getMinutes()),
+            timeMs: planDate.getTime(),
+            delay: delayMin,
+            cancelled: p.TripStopStatus === 'CANCEL',
+            platform: '',
+            platformChanged: false,
+            destination: p.DestinationName50 || p.DestinationCode || '?',
+            via: '',
+            type: p.TransportType || 'Trein',
+            typeCode: inferTypeCode(p.TransportType || ''),
+            line: p.LinePublicNumber || '',
+            operator: p.DataOwnerCode || '',
+            remarks: []
+          });
+        }
+      }
+    }
 
-  tmp.onerror=function(){busy=false;go()};
-  tmp.src=iurl(a.image_id);
+    return deps.length ? deps : null;
+  }
 
-  if(q.length<5)grab();
-}
+  /* ====== HELPERS ====== */
+  function parseTimeToMs(t) {
+    if (!t) return 0;
+    // ISO string
+    if (t.includes('T') || t.includes('-')) {
+      const d = new Date(t);
+      return isNaN(d.getTime()) ? 0 : d.getTime();
+    }
+    // HH:MM
+    const parts = t.split(':');
+    if (parts.length >= 2) {
+      const d = new Date();
+      d.setHours(parseInt(parts[0],10), parseInt(parts[1],10), 0, 0);
+      return d.getTime();
+    }
+    return 0;
+  }
 
-// Start met meerdere categorien
-grab();
-setTimeout(grab,1500);
-setTimeout(grab,3000);
+  function inferTypeCode(raw) {
+    if (!raw) return 'default';
+    const s = raw.toUpperCase().replace(/\s/g,'');
+    if (s.includes('ICE')) return 'ICE';
+    if (s.includes('INTERCITY') || s === 'IC') return 'IC';
+    if (s.includes('INTERNATIONAL') || s === 'INT') return 'INT';
+    if (s.includes('SPRINTER') || s === 'SPR' || s === 'S') return 'SPR';
+    if (s.includes('STOPTREIN') || s === 'ST') return 'ST';
+    if (s.includes('BUS')) return 'BUS';
+    if (s.includes('TRAIN') || s.includes('TREIN')) return 'IC';
+    return 'default';
+  }
+
+  function formatTime(str) {
+    if (!str) return '--:--';
+    // Already HH:MM
+    if (/^\d{1,2}:\d{2}$/.test(str)) return str;
+    // ISO
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return str;
+    return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ====== MAIN ====== */
+  async function refresh() {
+    let deps = null;
+
+    // Try treinposities first
+    const tp = await tryFetch(SOURCES.treinposities);
+    if (tp) {
+      deps = parseTreinposities(tp);
+      if (deps) currentSource = 'treinposities';
+    }
+
+    // Fallback to OVapi
+    if (!deps) {
+      const ov = await tryFetch(SOURCES.ovapi);
+      if (ov) {
+        deps = parseOvapi(ov);
+        if (deps) currentSource = 'ovapi';
+      }
+    }
+
+    if (!deps || deps.length === 0) {
+      errCount++;
+      if (errCount >= 3) showErr('Kan geen vertrektijden ophalen');
+      // Keep showing what we have
+      if (firstLoad) hideLoader();
+      return;
+    }
+
+    errCount = 0;
+    hideErr();
+
+    // Sort & limit
+    deps.sort((a,b) => a.timeMs - b.timeMs);
+    deps = deps.slice(0, MAX_ROWS);
+
+    render(deps);
+    updateTicker(deps);
+
+    if (firstLoad) {
+      firstLoad = false;
+      hideLoader();
+    }
+  }
+
+  /* ====== RENDER ====== */
+  function render(deps) {
+    const el = document.getElementById('depList');
+    // Keep loader if present
+    const loader = el.querySelector('.loader');
+    
+    let html = '';
+    deps.forEach((d, i) => {
+      const cls = 'dep-row' + (d.cancelled ? ' is-cancelled' : '');
+      const delay = 0.03 * i;
+
+      html += '<div class="' + cls + '" style="animation-delay:' + delay + 's">';
+
+      // Time
+      html += '<div class="time-col">';
+      html += '<div class="time-val">' + formatTime(d.time) + '</div>';
+      if (d.cancelled) {
+        html += '<div class="cancel-tag">Vervalt</div>';
+      } else if (d.delay > 0) {
+        html += '<div class="time-delay' + (d.delay >= 5 ? ' blink' : '') + '">+' + d.delay + ' min</div>';
+      }
+      html += '</div>';
+
+      // Platform
+      html += '<div class="plat-col">';
+      if (d.platform) {
+        html += '<div class="plat-num' + (d.platformChanged ? ' changed' : '') + '">' + esc(d.platform) + '</div>';
+      } else {
+        html += '<div class="plat-num" style="opacity:0.3">-</div>';
+      }
+      html += '</div>';
+
+      // Destination
+      html += '<div class="dest-col">';
+      html += '<div class="dest-name">' + esc(d.destination) + '</div>';
+      if (d.operator) {
+        html += '<div class="dest-operator">' + esc(d.operator) + '</div>';
+      }
+      html += '</div>';
+
+      // Via
+      html += '<div class="via-col">';
+      if (d.via) {
+        html += '<span class="via-label">via</span>' + esc(d.via);
+      }
+      html += '</div>';
+
+      // Type
+      html += '<div class="type-col">';
+      const pill = 'pill-' + d.typeCode;
+      const label = d.line ? (d.type + ' ' + d.line) : d.type;
+      html += '<span class="type-pill ' + pill + '">' + esc(label) + '</span>';
+      html += '</div>';
+
+      html += '</div>';
+    });
+
+    el.innerHTML = html;
+    if (loader && !loader.classList.contains('gone')) {
+      el.appendChild(loader);
+    }
+  }
+
+  /* ====== TICKER ====== */
+  function updateTicker(deps) {
+    const el = document.getElementById('ticker');
+    if (!el) return;
+
+    const now = new Date();
+    const ts = pad(now.getHours()) + ':' + pad(now.getMinutes());
+    const sep = ' <span class="sep">|</span> ';
+
+    const parts = ['Welkom op station Zwolle'];
+    parts.push('Laatste update: <b>' + ts + '</b>');
+
+    const delayed = deps.filter(d => d.delay > 0 && !d.cancelled);
+    const cancelled = deps.filter(d => d.cancelled);
+
+    delayed.forEach(d => {
+      parts.push('<b>' + formatTime(d.time) + '</b> naar ' + esc(d.destination) + ': <b>+' + d.delay + ' min vertraging</b>');
+    });
+
+    cancelled.forEach(d => {
+      parts.push('<b>' + formatTime(d.time) + '</b> naar ' + esc(d.destination) + ': <b>rijdt niet</b>');
+    });
+
+    if (!delayed.length && !cancelled.length) {
+      parts.push('Alle treinen rijden op tijd');
+    }
+
+    parts.push('Reisinformatie: 0900-9292');
+    parts.push('Kijk op 9292.nl voor uw reisplan');
+
+    el.innerHTML = parts.join(sep);
+  }
+
+  /* ====== UI HELPERS ====== */
+  function hideLoader() {
+    const l = document.getElementById('loader');
+    if (l) l.classList.add('gone');
+  }
+
+  function showErr(msg) {
+    const e = document.getElementById('errToast');
+    if (e) { e.textContent = msg; e.classList.add('show'); }
+    document.getElementById('liveDot').classList.add('error');
+  }
+
+  function hideErr() {
+    const e = document.getElementById('errToast');
+    if (e) e.classList.remove('show');
+    document.getElementById('liveDot').classList.remove('error');
+  }
+
+  /* ====== START ====== */
+  refresh();
+  setInterval(refresh, REFRESH);
+
+})();
 </script>
 </body>
 </html>
