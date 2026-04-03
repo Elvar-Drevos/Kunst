@@ -2,881 +2,272 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Zwolle - Vertrekkende treinen</title>
+<title>Verkeersinformatie Nederland - Live</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700;800&display=swap');
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  :root {
-    --ns-blue: #003082;
-    --ns-blue-dark: #00194a;
-    --ns-blue-deep: #000f2e;
-    --ns-yellow: #ffc917;
-    --ns-yellow-dark: #d4a600;
-    --row-bg-1: #061b3a;
-    --row-bg-2: #0a2244;
-    --delay-red: #ff3333;
-    --cancelled-red: #cc0000;
-    --green: #00cc66;
-    --text-primary: #ffffff;
-    --text-muted: #8a9fc0;
-    --border: #13305a;
-  }
-
-  html, body {
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    background: var(--ns-blue-deep);
-    font-family: 'Fira Sans', sans-serif;
-    color: var(--text-primary);
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .board {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    width: 100vw;
-  }
-
-  /* ========== HEADER ========== */
-  .header {
-    background: linear-gradient(135deg, var(--ns-yellow) 0%, #e6b400 60%, var(--ns-yellow-dark) 100%);
-    padding: 1.2vh 2.5vw;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 8vh;
-    box-shadow: 0 0.5vh 2vh rgba(0,0,0,0.4);
-    position: relative;
-    z-index: 10;
-  }
-
-  .header-left {
-    display: flex;
-    align-items: center;
-    gap: 1.2vw;
-  }
-
-  .ns-logo {
-    width: 5vh;
-    height: 5vh;
-    background: var(--ns-blue);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0.2vh 0.6vh rgba(0,0,0,0.3);
-  }
-
-  .ns-logo svg {
-    width: 3vh;
-    height: 3vh;
-    fill: var(--ns-yellow);
-  }
-
-  .header-title {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .station-name {
-    font-size: 3vh;
-    font-weight: 800;
-    color: var(--ns-blue-dark);
-    letter-spacing: -0.03em;
-    line-height: 1;
-  }
-
-  .station-subtitle {
-    font-size: 1.4vh;
-    color: #5a4200;
-    font-weight: 600;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-top: 0.2vh;
-  }
-
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 1.5vw;
-  }
-
-  .live-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.4vw;
-    background: var(--ns-blue);
-    padding: 0.4vh 0.8vw;
-    border-radius: 0.4vh;
-  }
-
-  .live-dot {
-    width: 1vh;
-    height: 1vh;
-    border-radius: 50%;
-    background: var(--green);
-    animation: pulse-live 2s ease-in-out infinite;
-  }
-
-  .live-dot.error { background: var(--delay-red); }
-
-  .live-text {
-    font-size: 1.3vh;
-    font-weight: 700;
-    color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  @keyframes pulse-live {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,204,102,0.6); }
-    50% { opacity: 0.6; box-shadow: 0 0 0 0.4vh rgba(0,204,102,0); }
-  }
-
-  .clock {
-    font-size: 3.4vh;
-    font-weight: 800;
-    color: var(--ns-blue-dark);
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
-  }
-
-  .clock-sec {
-    font-size: 2vh;
-    font-weight: 600;
-    opacity: 0.6;
-  }
-
-  /* ========== TABLE HEADER ========== */
-  .col-header {
-    display: grid;
-    grid-template-columns: 9vw 7vw 1fr 1fr 10vw;
-    padding: 0.8vh 2.5vw;
-    background: var(--ns-blue);
-    border-bottom: 0.25vh solid var(--ns-yellow);
-    height: 4vh;
-    align-items: center;
-  }
-
-  .col-header span {
-    font-size: 1.3vh;
-    font-weight: 700;
-    color: var(--ns-yellow);
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-  }
-
-  /* ========== DEPARTURE ROWS ========== */
-  .dep-list {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .dep-row {
-    display: grid;
-    grid-template-columns: 9vw 7vw 1fr 1fr 10vw;
-    padding: 0 2.5vw;
-    height: 7vh;
-    align-items: center;
-    border-bottom: 1px solid var(--border);
-    animation: row-in 0.35s ease-out forwards;
-    opacity: 0;
-  }
-
-  @keyframes row-in {
-    from { opacity: 0; transform: translateX(-1vw); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-
-  .dep-row:nth-child(odd) { background: var(--row-bg-1); }
-  .dep-row:nth-child(even) { background: var(--row-bg-2); }
-
-  .dep-row.is-cancelled {
-    opacity: 0.45;
-  }
-
-  .dep-row.is-cancelled .dest-name,
-  .dep-row.is-cancelled .time-val {
-    text-decoration: line-through;
-    text-decoration-color: var(--cancelled-red);
-    text-decoration-thickness: 0.2vh;
-  }
-
-  /* Time */
-  .time-col {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .time-val {
-    font-size: 2.5vh;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .time-delay {
-    font-size: 1.5vh;
-    font-weight: 700;
-    color: var(--delay-red);
-  }
-
-  .time-delay.blink {
-    animation: blink 1.2s steps(2) infinite;
-  }
-
-  @keyframes blink {
-    50% { opacity: 0.3; }
-  }
-
-  .cancel-tag {
-    font-size: 1.2vh;
-    font-weight: 800;
-    color: var(--cancelled-red);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    background: rgba(204,0,0,0.15);
-    padding: 0.1vh 0.4vw;
-    border-radius: 0.2vh;
-    display: inline-block;
-  }
-
-  /* Platform */
-  .plat-col {
-    display: flex;
-    justify-content: center;
-  }
-
-  .plat-num {
-    width: 4vh;
-    height: 4vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 0.2vh solid var(--ns-yellow);
-    border-radius: 0.4vh;
-    font-size: 2.2vh;
-    font-weight: 800;
-    color: var(--ns-yellow);
-    background: rgba(0,48,130,0.6);
-  }
-
-  .plat-num.changed {
-    background: var(--delay-red);
-    border-color: var(--delay-red);
-    color: #fff;
-    animation: plat-flash 0.8s ease infinite;
-  }
-
-  @keyframes plat-flash {
-    50% { transform: scale(1.1); }
-  }
-
-  /* Destination */
-  .dest-col {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2vh;
-    overflow: hidden;
-  }
-
-  .dest-name {
-    font-size: 2.3vh;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .dest-operator {
-    font-size: 1.2vh;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  /* Via */
-  .via-col {
-    font-size: 1.6vh;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding-left: 0.5vw;
-  }
-
-  .via-label {
-    color: var(--ns-yellow);
-    font-weight: 600;
-    margin-right: 0.3vw;
-    font-size: 1.3vh;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  /* Type */
-  .type-col {
-    display: flex;
-    align-items: center;
-  }
-
-  .type-pill {
-    padding: 0.3vh 0.7vw;
-    border-radius: 0.3vh;
-    font-size: 1.3vh;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    white-space: nowrap;
-  }
-
-  .pill-IC  { background: #0059a6; color: #fff; }
-  .pill-SPR { background: #1a6e3a; color: #fff; }
-  .pill-INT { background: #6b2d80; color: #fff; }
-  .pill-ICE { background: #b30000; color: #fff; }
-  .pill-ST  { background: #4a4a4a; color: #fff; }
-  .pill-BUS { background: #00707a; color: #fff; }
-  .pill-default { background: #2a4570; color: #ccc; }
-
-  /* ========== FOOTER ========== */
-  .footer {
-    background: var(--ns-blue);
-    border-top: 0.25vh solid var(--ns-yellow);
-    height: 5vh;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-    padding: 0 2.5vw;
-  }
-
-  .footer-tag {
-    flex-shrink: 0;
-    background: var(--ns-yellow);
-    color: var(--ns-blue-dark);
-    padding: 0.3vh 0.8vw;
-    font-size: 1.2vh;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    border-radius: 0.2vh;
-    margin-right: 1.5vw;
-  }
-
-  .ticker-wrap {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .ticker {
-    display: inline-block;
-    white-space: nowrap;
-    animation: scroll-ticker 45s linear infinite;
-    font-size: 1.6vh;
-    color: #d0dcea;
-    font-weight: 400;
-  }
-
-  .ticker b {
-    color: var(--ns-yellow);
-    font-weight: 600;
-  }
-
-  .ticker .sep {
-    margin: 0 2vw;
-    color: #3a5a8c;
-  }
-
-  @keyframes scroll-ticker {
-    from { transform: translateX(60vw); }
-    to   { transform: translateX(-100%); }
-  }
-
-  /* ========== STATES ========== */
-  .loader {
-    position: absolute;
-    inset: 0;
-    background: var(--ns-blue-deep);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2vh;
-    z-index: 50;
-    transition: opacity 0.6s ease;
-  }
-
-  .loader.gone { opacity: 0; pointer-events: none; }
-
-  .spin {
-    width: 5vh;
-    height: 5vh;
-    border: 0.35vh solid var(--border);
-    border-top-color: var(--ns-yellow);
-    border-radius: 50%;
-    animation: spin 0.9s linear infinite;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .loader-msg {
-    font-size: 1.8vh;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  .empty-state {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    font-size: 2.2vh;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  .err-toast {
-    position: fixed;
-    bottom: 7vh;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(180,0,0,0.92);
-    padding: 0.8vh 1.5vw;
-    border-radius: 0.4vh;
-    font-size: 1.4vh;
-    font-weight: 500;
-    z-index: 60;
-    opacity: 0;
-    transition: opacity 0.3s;
-    pointer-events: none;
-  }
-
-  .err-toast.show { opacity: 1; }
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--card:#111827;--border:#1e293b;--t1:#f1f5f9;--t2:#94a3b8;--t3:#64748b;--red:#ef4444;--rg:rgba(239,68,68,.15);--orange:#f59e0b;--yellow:#eab308;--green:#22c55e;--gg:rgba(34,197,94,.15);--blue:#3b82f6;--bg2:rgba(59,130,246,.15);--purple:#8b5cf6}
+body{font-family:Inter,sans-serif;background:var(--bg);color:var(--t1);width:1920px;height:1080px;overflow:hidden}
+.dash{display:grid;grid-template-columns:320px 1fr 330px;grid-template-rows:76px 1fr;gap:14px;padding:16px 20px 52px;height:100%}
+.hdr{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--card);border:1px solid var(--border);border-radius:14px}
+.hdr-l{display:flex;align-items:center;gap:14px}
+.logo{width:44px;height:44px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px rgba(59,130,246,.3)}
+.hdr-t{font-size:21px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hdr-s{font-size:11px;color:var(--t3);font-weight:500;letter-spacing:1px;text-transform:uppercase}
+.hdr-r{display:flex;align-items:center;gap:24px}
+.live{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--green)}
+.ldot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s ease-in-out infinite;box-shadow:0 0 8px var(--green)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.clk{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-1px}
+.dte{font-size:12px;color:var(--t2);font-weight:500}
+.err-msg{font-size:11px;color:var(--orange);font-weight:500;padding:4px 10px;background:rgba(245,158,11,.1);border-radius:6px;display:none}
+.sp{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden}
+.sc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.sc.f::before{background:linear-gradient(90deg,var(--red),var(--orange))}
+.sc.k::before{background:linear-gradient(90deg,var(--orange),var(--yellow))}
+.sc.d::before{background:linear-gradient(90deg,var(--yellow),var(--green))}
+.sc.w::before{background:linear-gradient(90deg,var(--blue),var(--purple))}
+.sl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3);margin-bottom:4px}
+.sv{font-size:32px;font-weight:900;letter-spacing:-2px;line-height:1}
+.sc.f .sv{color:var(--red)}.sc.k .sv{color:var(--orange)}.sc.d .sv{color:var(--yellow)}.sc.w .sv{color:var(--blue)}
+.sd{font-size:11px;color:var(--t2);margin-top:2px}
+.mc{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.sh{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
+.sht{font-size:14px;font-weight:700}
+.shb{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--rg);color:var(--red)}
+.tl{flex:1;display:flex;flex-direction:column;gap:7px;overflow:hidden}
+.ti{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center;position:relative;overflow:hidden}
+.ti::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+.ti.sev-h::after{background:var(--red)}.ti.sev-m::after{background:var(--orange)}.ti.sev-l::after{background:var(--yellow)}.ti.sev-n::after{background:var(--t3)}
+.rb{display:flex;flex-direction:column;align-items:center;justify-content:center;height:48px;border-radius:8px;font-weight:800;font-size:15px}
+.rb.sw{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;box-shadow:0 2px 10px rgba(220,38,38,.3)}
+.rb.nw{background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;box-shadow:0 2px 10px rgba(245,158,11,.3)}
+.rd{font-size:7px;font-weight:600;opacity:.8;text-align:center;max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tih h3{font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
+.tih p{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
+.cs{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--t3);margin-top:3px;padding:1px 6px;background:rgba(255,255,255,.04);border-radius:4px}
+.tis{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:70px}
+.db{font-size:18px;font-weight:800;letter-spacing:-1px}
+.sev-h .db{color:var(--red)}.sev-m .db{color:var(--orange)}.sev-l .db{color:var(--yellow)}.sev-n .db{color:var(--t3)}
+.kb{font-size:11px;color:var(--t2);font-weight:600}
+.rp{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.wl{flex:1;display:flex;flex-direction:column;gap:6px;overflow:hidden}
+.wli{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;border-left:3px solid var(--blue)}
+.wli .wr{font-size:12px;font-weight:700;color:var(--blue)}
+.wli .wds{font-size:10px;color:var(--t2);margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wli .wp{font-size:9px;color:var(--t3);margin-top:3px}
+.wli .wdir{font-size:9px;color:var(--t3);font-weight:500}
+.nf{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;gap:8px;color:var(--t3)}
+.nf-icon{font-size:48px;opacity:.4}
+.nf h3{font-size:16px;color:var(--green);font-weight:700}
+.tb{position:fixed;bottom:0;left:0;right:0;height:36px;background:linear-gradient(90deg,rgba(239,68,68,.1),rgba(59,130,246,.1),rgba(139,92,246,.1));border-top:1px solid var(--border);display:flex;align-items:center;overflow:hidden;z-index:10}
+.tbl{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 12px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;z-index:2;flex-shrink:0}
+.tbc{display:flex;animation:tk 60s linear infinite;white-space:nowrap}
+.tbc span{font-size:12px;font-weight:500;color:var(--t2);padding:0 30px}
+.tbc span strong{color:var(--t1);font-weight:700}
+@keyframes tk{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--t3);font-size:14px}
 </style>
 </head>
 <body>
-
-<div class="board">
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-left">
-      <div class="ns-logo">
-        <svg viewBox="0 0 24 24"><path d="M12 2C8 2 4 3.5 4 7v9.5C4 18.43 5.57 20 7.5 20L6 21.5v.5h2l2-2h4l2 2h2v-.5L16.5 20c1.93 0 3.5-1.57 3.5-3.5V7c0-3.5-4-5-8-5zm-4 14c-.83 0-1.5-.67-1.5-1.5S7.17 13 8 13s1.5.67 1.5 1.5S8.83 16 8 16zm3-7H6V7h5v2zm2 0V7h5v2h-5zm3 7c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
-      </div>
-      <div class="header-title">
-        <div class="station-name">Zwolle</div>
-        <div class="station-subtitle">Vertrekkende treinen</div>
-      </div>
+<div class="dash">
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="logo">🚗</div>
+      <div><div class="hdr-t">Verkeersinformatie Nederland</div><div class="hdr-s">Rijkswaterstaat — Live data</div></div>
     </div>
-    <div class="header-right">
-      <div class="live-badge">
-        <div class="live-dot" id="liveDot"></div>
-        <div class="live-text">Live</div>
-      </div>
-      <div class="clock" id="clock">--:--<span class="clock-sec">:--</span></div>
+    <div class="hdr-r">
+      <div class="err-msg" id="errMsg"></div>
+      <div class="live"><div class="ldot"></div>LIVE</div>
+      <div><div class="clk" id="clock">--:--:--</div><div class="dte" id="date">--</div></div>
     </div>
   </div>
-
-  <!-- COL HEADER -->
-  <div class="col-header">
-    <span>Vertrek</span>
-    <span>Spoor</span>
-    <span>Bestemming</span>
-    <span>Via</span>
-    <span>Vervoer</span>
+  <div class="sp">
+    <div class="sc f"><div class="sl">Aantal files</div><div class="sv" id="numJams">--</div><div class="sd">op rijkswegen</div></div>
+    <div class="sc k"><div class="sl">Totaal kilometers</div><div class="sv" id="totalKm">--</div><div class="sd" id="kmSub">filekilometers</div></div>
+    <div class="sc d"><div class="sl">Totale vertraging</div><div class="sv" id="totalDelay">--</div><div class="sd" id="delaySub">extra reistijd</div></div>
+    <div class="sc w"><div class="sl">Werkzaamheden</div><div class="sv" id="numWorks">--</div><div class="sd">actieve locaties</div></div>
+    <div class="sc" style="border-left:3px solid var(--t3)"><div class="sl">Overig</div><div class="sv" id="numInc" style="color:var(--t3)">--</div><div class="sd">afsluitingen &amp; meldingen</div></div>
   </div>
-
-  <!-- ROWS -->
-  <div class="dep-list" id="depList">
-    <div class="loader" id="loader">
-      <div class="spin"></div>
-      <div class="loader-msg">Vertrektijden laden...</div>
-    </div>
+  <div class="mc">
+    <div class="sh"><div class="sht">📍 Actuele files &amp; vertragingen</div><div class="shb" id="ac">laden...</div></div>
+    <div class="tl" id="tlist"><div class="loading">Verkeersinformatie ophalen...</div></div>
   </div>
-
-  <!-- FOOTER -->
-  <div class="footer">
-    <div class="footer-tag">Reisinformatie</div>
-    <div class="ticker-wrap">
-      <div class="ticker" id="ticker">
-        Welkom op station Zwolle <span class="sep">|</span>
-        Vertrektijden worden elke 30 seconden ververst <span class="sep">|</span>
-        Reisinformatie: 0900-9292 <span class="sep">|</span>
-        Kijk op 9292.nl voor uw reisplan
-      </div>
-    </div>
+  <div class="rp">
+    <div class="sh"><div class="sht">🔧 Werkzaamheden &amp; afsluitingen</div></div>
+    <div class="wl" id="wlist"><div class="loading">Laden...</div></div>
   </div>
 </div>
-
-<div class="err-toast" id="errToast"></div>
-
+<div class="tb"><div class="tbl">⚠️ MELDINGEN</div><div class="tbc" id="ticker"><span>Verkeersinformatie wordt geladen...</span></div></div>
 <script>
-(function(){
-  'use strict';
+// Clock
+function updateClock(){
+  var n=new Date();
+  var d=["zondag","maandag","dinsdag","woensdag","donderdag","vrijdag","zaterdag"];
+  var m=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+  document.getElementById("clock").textContent=n.toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  document.getElementById("date").textContent=d[n.getDay()]+" "+n.getDate()+" "+m[n.getMonth()]+" "+n.getFullYear();
+}
+setInterval(updateClock,1000);
+updateClock();
 
-  /* ====== CONFIG ====== */
-  // IMPORTANT: OVapi werkt met stopareacode of tpc.
-  // Treinen op Zwolle zitten waarschijnlijk NIET in OVapi (die doet bus/tram/metro).
-  // We gebruiken daarom TWEE bronnen:
-  //   1. Primair: treinposities.nl API (gratis, geen key nodig, trein-specifiek)
-  //   2. Fallback: OVapi stopareacode 'zl' (voor eventuele bus data)
-  //
-  // Als treinposities.nl niet werkt vanwege CORS, schakel dan over naar de
-  // CORS_PROXY. Op Yodeck (Chromium kiosk) is CORS vaak geen issue.
+function getSeverity(delay){
+  if(delay>=15) return "sev-h";
+  if(delay>=5) return "sev-m";
+  if(delay>0) return "sev-l";
+  return "sev-n";
+}
+function getRoadClass(road){
+  if(!road) return "nw";
+  return road.charAt(0)==="A"?"sw":"nw";
+}
+function formatKm(m){return m?(m/1000).toFixed(1)+" km":"";}
+function formatDelay(m){return m?"+"+Math.round(m)+" min":"";}
+function formatDate(iso){
+  if(!iso) return "";
+  try{var d=new Date(iso);return d.toLocaleDateString("nl-NL",{day:"numeric",month:"short",year:"numeric"});}
+  catch(e){return "";}
+}
+function escHtml(s){
+  if(!s) return "";
+  var d=document.createElement("div");
+  d.appendChild(document.createTextNode(s));
+  return d.innerHTML;
+}
 
-  const STATION = 'zl';  // NS stationscode Zwolle
-  const REFRESH = 30000;
-  const MAX_ROWS = 11;   // past op 1080p scherm
+var API_URL="https://api.rwsverkeersinfo.nl/api/traffic/";
+var lastData=null;
+var workingMethod=-1;
 
-  // Proxy opties - probeer ze in volgorde
-  const PROXIES = [
-    '',                                    // Direct (werkt op Yodeck)
-    'https://corsproxy.io/?',              // Proxy 1
-    'https://api.allorigins.win/raw?url=', // Proxy 2
+function getProxyUrls(){
+  var encoded=encodeURIComponent(API_URL);
+  return [
+    {url:API_URL, name:"direct", parse:"direct"},
+    {url:"https://api.allorigins.win/get?url="+encoded, name:"allorigins", parse:"allorigins"},
+    {url:"https://corsproxy.io/?url="+encoded, name:"corsproxy.io", parse:"direct"},
+    {url:"https://api.codetabs.com/v1/proxy?quest="+encoded, name:"codetabs", parse:"direct"}
   ];
+}
 
-  // Data source endpoints
-  const SOURCES = {
-    treinposities: 'https://treinposities.nl/api/departures/zwolle',
-    ovapi: 'https://v0.ovapi.nl/stopareacode/' + STATION + '/departures'
-  };
-
-  let proxyIndex = 0;
-  let currentSource = 'treinposities';
-  let firstLoad = true;
-  let errCount = 0;
-
-  /* ====== CLOCK ====== */
-  function tick() {
-    const n = new Date();
-    const el = document.getElementById('clock');
-    if (!el) return;
-    el.innerHTML =
-      pad(n.getHours()) + ':' + pad(n.getMinutes()) +
-      '<span class="clock-sec">:' + pad(n.getSeconds()) + '</span>';
-  }
-  function pad(v) { return String(v).padStart(2,'0'); }
-  setInterval(tick, 1000);
-  tick();
-
-  /* ====== FETCH ====== */
-  async function tryFetch(url) {
-    // Try each proxy until one works
-    for (let i = 0; i < PROXIES.length; i++) {
-      const idx = (proxyIndex + i) % PROXIES.length;
-      const proxy = PROXIES[idx];
-      const fullUrl = proxy ? proxy + encodeURIComponent(url) : url;
-      
-      try {
-        const r = await fetch(fullUrl, {
-          headers: { 'Accept': 'application/json' },
-          cache: 'no-store',
-          signal: AbortSignal.timeout(8000)
-        });
-        if (!r.ok) continue;
-        const data = await r.json();
-        proxyIndex = idx; // remember working proxy
-        return data;
-      } catch(e) {
-        continue;
-      }
+async function tryFetch(entry){
+  var controller=new AbortController();
+  var timeout=setTimeout(function(){controller.abort();},8000);
+  try{
+    var res=await fetch(entry.url,{signal:controller.signal});
+    clearTimeout(timeout);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    if(entry.parse==="allorigins"){
+      var wrapper=await res.json();
+      return JSON.parse(wrapper.contents);
     }
-    return null;
+    return await res.json();
+  }catch(e){
+    clearTimeout(timeout);
+    throw e;
   }
+}
 
-  /* ====== PARSE: treinposities.nl ====== */
-  function parseTreinposities(data) {
-    // treinposities.nl returns an array of departure objects
-    if (!data) return null;
-    
-    const arr = Array.isArray(data) ? data : (data.departures || data.data || []);
-    if (!arr.length) return null;
-
-    return arr.map(d => ({
-      time: d.time || d.departure_time || '',
-      timeMs: parseTimeToMs(d.time || d.departure_time || ''),
-      delay: d.delay || 0,
-      cancelled: d.cancelled || false,
-      platform: d.platform || d.track || '',
-      platformChanged: d.platform_changed || d.platformChanged || false,
-      destination: d.destination || d.direction || '',
-      via: d.via || '',
-      type: d.type || d.category || 'Trein',
-      typeCode: inferTypeCode(d.type || d.category || d.type_code || ''),
-      line: d.line || d.service || '',
-      operator: d.company || d.operator || '',
-      remarks: d.remarks || d.tips || []
-    }));
+async function fetchData(){
+  var proxies=getProxyUrls();
+  // If we found a working method before, try that first
+  if(workingMethod>=0){
+    var reordered=[proxies[workingMethod]];
+    for(var j=0;j<proxies.length;j++){if(j!==workingMethod)reordered.push(proxies[j]);}
+    proxies=reordered;
   }
-
-  /* ====== PARSE: OVapi ====== */
-  function parseOvapi(data) {
-    if (!data || typeof data !== 'object') return null;
-
-    const deps = [];
-    const now = Date.now();
-
-    // Walk nested structure: { tpcCode: { Passes: { passId: {...} } } }
-    for (const key1 of Object.keys(data)) {
-      const level1 = data[key1];
-      if (!level1 || typeof level1 !== 'object') continue;
-
-      // Could be { Passes: ... } or { tpcCode: { Passes: ... } }
-      const sources = level1.Passes ? [level1] :
-        Object.values(level1).filter(v => v && v.Passes);
-
-      for (const src of sources) {
-        if (!src.Passes) continue;
-        for (const pk of Object.keys(src.Passes)) {
-          const p = src.Passes[pk];
-          if (!p) continue;
-
-          const exp = p.ExpectedDepartureTime;
-          const plan = p.TargetDepartureTime;
-          if (!exp && !plan) continue;
-
-          const depDate = new Date(exp || plan);
-          if (isNaN(depDate.getTime())) continue;
-          if (depDate.getTime() < now - 120000) continue; // skip past
-
-          const planDate = plan ? new Date(plan) : depDate;
-          const delayMin = Math.max(0, Math.round((depDate - planDate) / 60000));
-
-          deps.push({
-            time: pad(planDate.getHours()) + ':' + pad(planDate.getMinutes()),
-            timeMs: planDate.getTime(),
-            delay: delayMin,
-            cancelled: p.TripStopStatus === 'CANCEL',
-            platform: '',
-            platformChanged: false,
-            destination: p.DestinationName50 || p.DestinationCode || '?',
-            via: '',
-            type: p.TransportType || 'Trein',
-            typeCode: inferTypeCode(p.TransportType || ''),
-            line: p.LinePublicNumber || '',
-            operator: p.DataOwnerCode || '',
-            remarks: []
-          });
-        }
-      }
-    }
-
-    return deps.length ? deps : null;
-  }
-
-  /* ====== HELPERS ====== */
-  function parseTimeToMs(t) {
-    if (!t) return 0;
-    // ISO string
-    if (t.includes('T') || t.includes('-')) {
-      const d = new Date(t);
-      return isNaN(d.getTime()) ? 0 : d.getTime();
-    }
-    // HH:MM
-    const parts = t.split(':');
-    if (parts.length >= 2) {
-      const d = new Date();
-      d.setHours(parseInt(parts[0],10), parseInt(parts[1],10), 0, 0);
-      return d.getTime();
-    }
-    return 0;
-  }
-
-  function inferTypeCode(raw) {
-    if (!raw) return 'default';
-    const s = raw.toUpperCase().replace(/\s/g,'');
-    if (s.includes('ICE')) return 'ICE';
-    if (s.includes('INTERCITY') || s === 'IC') return 'IC';
-    if (s.includes('INTERNATIONAL') || s === 'INT') return 'INT';
-    if (s.includes('SPRINTER') || s === 'SPR' || s === 'S') return 'SPR';
-    if (s.includes('STOPTREIN') || s === 'ST') return 'ST';
-    if (s.includes('BUS')) return 'BUS';
-    if (s.includes('TRAIN') || s.includes('TREIN')) return 'IC';
-    return 'default';
-  }
-
-  function formatTime(str) {
-    if (!str) return '--:--';
-    // Already HH:MM
-    if (/^\d{1,2}:\d{2}$/.test(str)) return str;
-    // ISO
-    const d = new Date(str);
-    if (isNaN(d.getTime())) return str;
-    return pad(d.getHours()) + ':' + pad(d.getMinutes());
-  }
-
-  function esc(s) {
-    if (!s) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  /* ====== MAIN ====== */
-  async function refresh() {
-    let deps = null;
-
-    // Try treinposities first
-    const tp = await tryFetch(SOURCES.treinposities);
-    if (tp) {
-      deps = parseTreinposities(tp);
-      if (deps) currentSource = 'treinposities';
-    }
-
-    // Fallback to OVapi
-    if (!deps) {
-      const ov = await tryFetch(SOURCES.ovapi);
-      if (ov) {
-        deps = parseOvapi(ov);
-        if (deps) currentSource = 'ovapi';
-      }
-    }
-
-    if (!deps || deps.length === 0) {
-      errCount++;
-      if (errCount >= 3) showErr('Kan geen vertrektijden ophalen');
-      // Keep showing what we have
-      if (firstLoad) hideLoader();
+  for(var i=0;i<proxies.length;i++){
+    try{
+      console.log("Trying: "+proxies[i].name);
+      var data=await tryFetch(proxies[i]);
+      if(!data||!data.obstructions) throw new Error("Invalid data");
+      lastData=data;
+      // Remember which one worked
+      var allP=getProxyUrls();
+      for(var k=0;k<allP.length;k++){if(allP[k].name===proxies[i].name)workingMethod=k;}
+      document.getElementById("errMsg").style.display="none";
+      console.log("Success via: "+proxies[i].name);
+      render(data);
       return;
-    }
-
-    errCount = 0;
-    hideErr();
-
-    // Sort & limit
-    deps.sort((a,b) => a.timeMs - b.timeMs);
-    deps = deps.slice(0, MAX_ROWS);
-
-    render(deps);
-    updateTicker(deps);
-
-    if (firstLoad) {
-      firstLoad = false;
-      hideLoader();
+    }catch(e){
+      console.warn(proxies[i].name+" failed:",e.message||e);
     }
   }
+  console.error("All fetch methods failed");
+  var el=document.getElementById("errMsg");
+  el.textContent="Kan data niet ophalen. Herpoging over 2 min.";
+  el.style.display="block";
+  if(lastData) render(lastData);
+}
 
-  /* ====== RENDER ====== */
-  function render(deps) {
-    const el = document.getElementById('depList');
-    // Keep loader if present
-    const loader = el.querySelector('.loader');
-    
-    let html = '';
-    deps.forEach((d, i) => {
-      const cls = 'dep-row' + (d.cancelled ? ' is-cancelled' : '');
-      const delay = 0.03 * i;
+function render(data){
+  var obs=data.obstructions||[];
+  var jams=obs.filter(function(o){return o.obstructionType===4;});
+  var works=obs.filter(function(o){return o.obstructionType===1||o.obstructionType===22;});
+  var other=obs.filter(function(o){return o.obstructionType!==4&&o.obstructionType!==1&&o.obstructionType!==22;});
+  jams.sort(function(a,b){return(b.delay||0)-(a.delay||0);});
 
-      html += '<div class="' + cls + '" style="animation-delay:' + delay + 's">';
+  var totalKm=0,totalDelay=0;
+  jams.forEach(function(j){totalKm+=(j.length||0);totalDelay+=(j.delay||0);});
 
-      // Time
-      html += '<div class="time-col">';
-      html += '<div class="time-val">' + formatTime(d.time) + '</div>';
-      if (d.cancelled) {
-        html += '<div class="cancel-tag">Vervalt</div>';
-      } else if (d.delay > 0) {
-        html += '<div class="time-delay' + (d.delay >= 5 ? ' blink' : '') + '">+' + d.delay + ' min</div>';
-      }
-      html += '</div>';
+  document.getElementById("numJams").textContent=data.numberOfJams||jams.length;
+  document.getElementById("totalKm").textContent=(totalKm/1000).toFixed(1)+" km";
+  document.getElementById("kmSub").textContent="over "+jams.length+" trajecten";
+  document.getElementById("totalDelay").textContent=Math.round(totalDelay)+" min";
+  document.getElementById("delaySub").textContent=jams.length>0?"gem. "+Math.round(totalDelay/jams.length)+" min per file":"geen files";
+  document.getElementById("numWorks").textContent=data.numberOfRoadWorks||works.length;
+  document.getElementById("numInc").textContent=other.length;
+  document.getElementById("ac").textContent=jams.length+" actief";
 
-      // Platform
-      html += '<div class="plat-col">';
-      if (d.platform) {
-        html += '<div class="plat-num' + (d.platformChanged ? ' changed' : '') + '">' + esc(d.platform) + '</div>';
-      } else {
-        html += '<div class="plat-num" style="opacity:0.3">-</div>';
-      }
-      html += '</div>';
-
-      // Destination
-      html += '<div class="dest-col">';
-      html += '<div class="dest-name">' + esc(d.destination) + '</div>';
-      if (d.operator) {
-        html += '<div class="dest-operator">' + esc(d.operator) + '</div>';
-      }
-      html += '</div>';
-
-      // Via
-      html += '<div class="via-col">';
-      if (d.via) {
-        html += '<span class="via-label">via</span>' + esc(d.via);
-      }
-      html += '</div>';
-
-      // Type
-      html += '<div class="type-col">';
-      const pill = 'pill-' + d.typeCode;
-      const label = d.line ? (d.type + ' ' + d.line) : d.type;
-      html += '<span class="type-pill ' + pill + '">' + esc(label) + '</span>';
-      html += '</div>';
-
-      html += '</div>';
-    });
-
-    el.innerHTML = html;
-    if (loader && !loader.classList.contains('gone')) {
-      el.appendChild(loader);
-    }
+  var tl=document.getElementById("tlist");
+  if(jams.length===0){
+    tl.innerHTML='<div class="nf"><div class="nf-icon">\u2705</div><h3>Geen files!</h3><div>De wegen zijn vrij</div></div>';
+  }else{
+    tl.innerHTML=jams.map(function(j){
+      var sev=getSeverity(j.delay);
+      var rc=getRoadClass(j.roadNumber);
+      return '<div class="ti '+sev+'">'
+        +'<div class="rb '+rc+'">'+escHtml(j.roadNumber||"?")
+        +'<div class="rd">'+escHtml(j.directionText||"")+'</div></div>'
+        +'<div class="tih"><h3>'+escHtml(j.title||"Vertraging")+'</h3>'
+        +'<p>'+escHtml(j.locationText||"")+'</p>'
+        +(j.cause?'<div class="cs">'+escHtml(j.cause)+'</div>':"")+'</div>'
+        +'<div class="tis">'+(j.delay?'<div class="db">'+formatDelay(j.delay)+'</div>':"")
+        +(j.length?'<div class="kb">'+formatKm(j.length)+'</div>':"")
+        +'</div></div>';
+    }).join("");
   }
 
-  /* ====== TICKER ====== */
-  function updateTicker(deps) {
-    const el = document.getElementById('ticker');
-    if (!el) return;
-
-    const now = new Date();
-    const ts = pad(now.getHours()) + ':' + pad(now.getMinutes());
-    const sep = ' <span class="sep">|</span> ';
-
-    const parts = ['Welkom op station Zwolle'];
-    parts.push('Laatste update: <b>' + ts + '</b>');
-
-    const delayed = deps.filter(d => d.delay > 0 && !d.cancelled);
-    const cancelled = deps.filter(d => d.cancelled);
-
-    delayed.forEach(d => {
-      parts.push('<b>' + formatTime(d.time) + '</b> naar ' + esc(d.destination) + ': <b>+' + d.delay + ' min vertraging</b>');
-    });
-
-    cancelled.forEach(d => {
-      parts.push('<b>' + formatTime(d.time) + '</b> naar ' + esc(d.destination) + ': <b>rijdt niet</b>');
-    });
-
-    if (!delayed.length && !cancelled.length) {
-      parts.push('Alle treinen rijden op tijd');
-    }
-
-    parts.push('Reisinformatie: 0900-9292');
-    parts.push('Kijk op 9292.nl voor uw reisplan');
-
-    el.innerHTML = parts.join(sep);
+  var allRight=works.concat(other);
+  allRight.sort(function(a,b){return(b.hindrance||0)-(a.hindrance||0);});
+  var wl=document.getElementById("wlist");
+  if(allRight.length===0){
+    wl.innerHTML='<div class="nf"><div class="nf-icon">\u2705</div><h3>Geen meldingen</h3></div>';
+  }else{
+    wl.innerHTML=allRight.map(function(w){
+      var endDate=w.timeEnd?" - Tot "+formatDate(w.timeEnd):"";
+      return '<div class="wli">'
+        +'<div class="wr">'+escHtml(w.roadNumber||"")+" - "+escHtml(w.title||"")+'</div>'
+        +'<div class="wdir">'+escHtml(w.directionText||"")+'</div>'
+        +(w.description?'<div class="wds">'+escHtml(w.description)+'</div>':"")
+        +'<div class="wds">'+escHtml(w.locationText||"")+'</div>'
+        +(endDate?'<div class="wp">'+escHtml(endDate)+'</div>':"")+'</div>';
+    }).join("");
   }
 
-  /* ====== UI HELPERS ====== */
-  function hideLoader() {
-    const l = document.getElementById('loader');
-    if (l) l.classList.add('gone');
-  }
+  var msgs=obs.filter(function(o){return o.delay>0||o.obstructionType===7;}).map(function(o){
+    return "<span><strong>"+escHtml(o.roadNumber||"")+"</strong> "+escHtml(o.directionText||"")+": "
+      +escHtml(o.title||"")+" "+escHtml(o.locationText||"")
+      +(o.delay?" (+"+Math.round(o.delay)+" min)":"")
+      +(o.cause?" - "+escHtml(o.cause):"")+"</span>";
+  });
+  if(msgs.length===0) msgs=["<span>Geen bijzonderheden op dit moment</span>"];
+  var tickerHtml=msgs.join("  \u2022  ");
+  document.getElementById("ticker").innerHTML=tickerHtml+tickerHtml;
+}
 
-  function showErr(msg) {
-    const e = document.getElementById('errToast');
-    if (e) { e.textContent = msg; e.classList.add('show'); }
-    document.getElementById('liveDot').classList.add('error');
-  }
-
-  function hideErr() {
-    const e = document.getElementById('errToast');
-    if (e) e.classList.remove('show');
-    document.getElementById('liveDot').classList.remove('error');
-  }
-
-  /* ====== START ====== */
-  refresh();
-  setInterval(refresh, REFRESH);
-
-})();
+fetchData();
+setInterval(fetchData,120000);
 </script>
 </body>
 </html>
