@@ -2,272 +2,653 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<title>Verkeersinformatie Nederland - Live</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zwolle Station - Bus vertrekbord</title>
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0e1a;--card:#111827;--border:#1e293b;--t1:#f1f5f9;--t2:#94a3b8;--t3:#64748b;--red:#ef4444;--rg:rgba(239,68,68,.15);--orange:#f59e0b;--yellow:#eab308;--green:#22c55e;--gg:rgba(34,197,94,.15);--blue:#3b82f6;--bg2:rgba(59,130,246,.15);--purple:#8b5cf6}
-body{font-family:Inter,sans-serif;background:var(--bg);color:var(--t1);width:1920px;height:1080px;overflow:hidden}
-.dash{display:grid;grid-template-columns:320px 1fr 330px;grid-template-rows:76px 1fr;gap:14px;padding:16px 20px 52px;height:100%}
-.hdr{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--card);border:1px solid var(--border);border-radius:14px}
-.hdr-l{display:flex;align-items:center;gap:14px}
-.logo{width:44px;height:44px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 20px rgba(59,130,246,.3)}
-.hdr-t{font-size:21px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.hdr-s{font-size:11px;color:var(--t3);font-weight:500;letter-spacing:1px;text-transform:uppercase}
-.hdr-r{display:flex;align-items:center;gap:24px}
-.live{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--green)}
-.ldot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s ease-in-out infinite;box-shadow:0 0 8px var(--green)}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
-.clk{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-1px}
-.dte{font-size:12px;color:var(--t2);font-weight:500}
-.err-msg{font-size:11px;color:var(--orange);font-weight:500;padding:4px 10px;background:rgba(245,158,11,.1);border-radius:6px;display:none}
-.sp{display:flex;flex-direction:column;gap:10px;overflow:hidden}
-.sc{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden}
-.sc::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
-.sc.f::before{background:linear-gradient(90deg,var(--red),var(--orange))}
-.sc.k::before{background:linear-gradient(90deg,var(--orange),var(--yellow))}
-.sc.d::before{background:linear-gradient(90deg,var(--yellow),var(--green))}
-.sc.w::before{background:linear-gradient(90deg,var(--blue),var(--purple))}
-.sl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3);margin-bottom:4px}
-.sv{font-size:32px;font-weight:900;letter-spacing:-2px;line-height:1}
-.sc.f .sv{color:var(--red)}.sc.k .sv{color:var(--orange)}.sc.d .sv{color:var(--yellow)}.sc.w .sv{color:var(--blue)}
-.sd{font-size:11px;color:var(--t2);margin-top:2px}
-.mc{display:flex;flex-direction:column;gap:10px;overflow:hidden}
-.sh{display:flex;align-items:center;justify-content:space-between;padding:0 4px}
-.sht{font-size:14px;font-weight:700}
-.shb{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--rg);color:var(--red)}
-.tl{flex:1;display:flex;flex-direction:column;gap:7px;overflow:hidden}
-.ti{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 14px;display:grid;grid-template-columns:72px 1fr auto;gap:12px;align-items:center;position:relative;overflow:hidden}
-.ti::after{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
-.ti.sev-h::after{background:var(--red)}.ti.sev-m::after{background:var(--orange)}.ti.sev-l::after{background:var(--yellow)}.ti.sev-n::after{background:var(--t3)}
-.rb{display:flex;flex-direction:column;align-items:center;justify-content:center;height:48px;border-radius:8px;font-weight:800;font-size:15px}
-.rb.sw{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;box-shadow:0 2px 10px rgba(220,38,38,.3)}
-.rb.nw{background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;box-shadow:0 2px 10px rgba(245,158,11,.3)}
-.rd{font-size:7px;font-weight:600;opacity:.8;text-align:center;max-width:68px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tih h3{font-size:13px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
-.tih p{font-size:11px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:520px}
-.cs{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--t3);margin-top:3px;padding:1px 6px;background:rgba(255,255,255,.04);border-radius:4px}
-.tis{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:70px}
-.db{font-size:18px;font-weight:800;letter-spacing:-1px}
-.sev-h .db{color:var(--red)}.sev-m .db{color:var(--orange)}.sev-l .db{color:var(--yellow)}.sev-n .db{color:var(--t3)}
-.kb{font-size:11px;color:var(--t2);font-weight:600}
-.rp{display:flex;flex-direction:column;gap:10px;overflow:hidden}
-.wl{flex:1;display:flex;flex-direction:column;gap:6px;overflow:hidden}
-.wli{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 12px;border-left:3px solid var(--blue)}
-.wli .wr{font-size:12px;font-weight:700;color:var(--blue)}
-.wli .wds{font-size:10px;color:var(--t2);margin-top:2px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.wli .wp{font-size:9px;color:var(--t3);margin-top:3px}
-.wli .wdir{font-size:9px;color:var(--t3);font-weight:500}
-.nf{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;gap:8px;color:var(--t3)}
-.nf-icon{font-size:48px;opacity:.4}
-.nf h3{font-size:16px;color:var(--green);font-weight:700}
-.tb{position:fixed;bottom:0;left:0;right:0;height:36px;background:linear-gradient(90deg,rgba(239,68,68,.1),rgba(59,130,246,.1),rgba(139,92,246,.1));border-top:1px solid var(--border);display:flex;align-items:center;overflow:hidden;z-index:10}
-.tbl{background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:4px 12px;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;z-index:2;flex-shrink:0}
-.tbc{display:flex;animation:tk 60s linear infinite;white-space:nowrap}
-.tbc span{font-size:12px;font-weight:500;color:var(--t2);padding:0 30px}
-.tbc span strong{color:var(--t1);font-weight:700}
-@keyframes tk{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--t3);font-size:14px}
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box}
+
+  :root{
+    --teal:#0d7377;
+    --teal-dark:#065456;
+    --teal-deep:#032e30;
+    --teal-glow:#14a3a8;
+    --surface:#071e1f;
+    --surface-row1:#0a2627;
+    --surface-row2:#0d2f30;
+    --accent:#45e6c3;
+    --accent-dim:#2aaa8f;
+    --white:#f0f7f7;
+    --muted:#7fafb0;
+    --border:#16413f;
+    --red:#ff4a5e;
+    --red-bg:rgba(255,74,94,0.12);
+    --orange:#ffad33;
+    --line-bg:#134546;
+  }
+
+  html,body{
+    width:100vw;height:100vh;overflow:hidden;
+    background:var(--surface);
+    font-family:'DM Sans',sans-serif;
+    color:var(--white);
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .board{display:flex;flex-direction:column;height:100vh;width:100vw}
+
+  /* ===== HEADER ===== */
+  .hdr{
+    background:linear-gradient(135deg,var(--teal) 0%,var(--teal-dark) 100%);
+    padding:1vh 2.5vw;
+    display:flex;align-items:center;justify-content:space-between;
+    height:8.5vh;
+    box-shadow:0 .5vh 2vh rgba(0,0,0,.5);
+    position:relative;z-index:10;
+  }
+
+  .hdr::after{
+    content:'';position:absolute;bottom:0;left:0;right:0;
+    height:.3vh;
+    background:linear-gradient(90deg,var(--accent),var(--teal-glow),var(--accent));
+  }
+
+  .hdr-left{display:flex;align-items:center;gap:1.2vw}
+
+  .bus-icon{
+    width:5.5vh;height:5.5vh;
+    background:var(--accent);
+    border-radius:.8vh;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 .2vh .8vh rgba(69,230,195,.3);
+  }
+
+  .bus-icon svg{width:3.5vh;height:3.5vh;fill:var(--teal-deep)}
+
+  .hdr-title{display:flex;flex-direction:column}
+
+  .hdr-station{
+    font-size:3.2vh;font-weight:800;
+    color:var(--white);letter-spacing:-.03em;line-height:1;
+  }
+
+  .hdr-sub{
+    font-size:1.3vh;font-weight:600;
+    color:var(--accent);
+    letter-spacing:.18em;text-transform:uppercase;
+    margin-top:.3vh;
+  }
+
+  .hdr-right{display:flex;align-items:center;gap:1.8vw}
+
+  .live{
+    display:flex;align-items:center;gap:.4vw;
+    background:rgba(0,0,0,.25);
+    padding:.4vh .8vw;border-radius:.4vh;
+    border:1px solid var(--border);
+  }
+
+  .live-dot{
+    width:.9vh;height:.9vh;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 .6vh var(--accent);
+    animation:glow 2s ease-in-out infinite;
+  }
+
+  .live-dot.err{background:var(--red);box-shadow:0 0 .6vh var(--red)}
+
+  @keyframes glow{
+    0%,100%{opacity:1}50%{opacity:.35}
+  }
+
+  .live-txt{
+    font-size:1.2vh;font-weight:700;color:var(--accent);
+    text-transform:uppercase;letter-spacing:.1em;
+  }
+
+  .clock{
+    font-family:'JetBrains Mono',monospace;
+    font-size:3.6vh;font-weight:700;
+    color:var(--white);letter-spacing:-.02em;
+  }
+
+  .clock-s{font-size:2vh;opacity:.5}
+
+  /* ===== COLUMN HEADER ===== */
+  .cols{
+    display:grid;
+    grid-template-columns:7vw 9vw 1fr 1fr 12vw;
+    padding:0 2.5vw;
+    height:4vh;align-items:center;
+    background:var(--teal-deep);
+    border-bottom:1px solid var(--border);
+  }
+
+  .cols span{
+    font-size:1.15vh;font-weight:700;
+    color:var(--accent-dim);
+    text-transform:uppercase;letter-spacing:.18em;
+  }
+
+  /* ===== ROWS ===== */
+  .rows{flex:1;overflow:hidden;position:relative}
+
+  .row{
+    display:grid;
+    grid-template-columns:7vw 9vw 1fr 1fr 12vw;
+    padding:0 2.5vw;
+    height:7.2vh;align-items:center;
+    border-bottom:1px solid var(--border);
+    animation:slideIn .35s ease-out forwards;
+    opacity:0;
+  }
+
+  @keyframes slideIn{
+    from{opacity:0;transform:translateY(.6vh)}
+    to{opacity:1;transform:translateY(0)}
+  }
+
+  .row:nth-child(odd){background:var(--surface-row1)}
+  .row:nth-child(even){background:var(--surface-row2)}
+
+  .row.cancelled{opacity:.4}
+  .row.cancelled .r-dest,.row.cancelled .r-time-val{
+    text-decoration:line-through;
+    text-decoration-color:var(--red);
+    text-decoration-thickness:.18vh;
+  }
+
+  /* -- Time -- */
+  .r-time{display:flex;flex-direction:column}
+  .r-time-val{
+    font-family:'JetBrains Mono',monospace;
+    font-size:2.5vh;font-weight:700;
+  }
+  .r-delay{
+    font-size:1.35vh;font-weight:700;color:var(--orange);
+  }
+  .r-delay.bad{color:var(--red);animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:.25}}
+
+  .r-cancel{
+    font-size:1.1vh;font-weight:800;color:var(--red);
+    text-transform:uppercase;letter-spacing:.06em;
+    background:var(--red-bg);padding:.1vh .4vw;border-radius:.15vh;
+  }
+
+  /* -- Line number -- */
+  .r-line{display:flex;align-items:center;justify-content:center}
+
+  .line-badge{
+    min-width:4.5vw;
+    padding:.4vh .6vw;
+    border-radius:.5vh;
+    background:var(--line-bg);
+    border:1px solid var(--border);
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:2.2vh;font-weight:700;
+    color:var(--accent);
+    letter-spacing:.02em;
+  }
+
+  /* Color-code some common Zwolle lines */
+  .line-1{background:#1565C0;color:#fff;border-color:#1565C0}
+  .line-2{background:#AD1457;color:#fff;border-color:#AD1457}
+  .line-3{background:#00838F;color:#fff;border-color:#00838F}
+  .line-4{background:#EF6C00;color:#fff;border-color:#EF6C00}
+  .line-5{background:#558B2F;color:#fff;border-color:#558B2F}
+  .line-7{background:#6A1B9A;color:#fff;border-color:#6A1B9A}
+  .line-8{background:#C62828;color:#fff;border-color:#C62828}
+  .line-9{background:#00695C;color:#fff;border-color:#00695C}
+  .line-11{background:#37474F;color:#fff;border-color:#37474F}
+  .line-29{background:#4527A0;color:#fff;border-color:#4527A0}
+
+  /* -- Destination -- */
+  .r-dest-wrap{display:flex;flex-direction:column;gap:.15vh;overflow:hidden}
+  .r-dest{
+    font-size:2.2vh;font-weight:700;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .r-operator{
+    font-size:1.1vh;font-weight:500;color:var(--muted);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+
+  /* -- Via / direction -- */
+  .r-via{
+    font-size:1.4vh;color:var(--muted);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    padding-left:.3vw;
+  }
+  .r-via b{color:var(--accent-dim);font-weight:600;font-size:1.15vh;text-transform:uppercase;letter-spacing:.06em;margin-right:.3vw}
+
+  /* -- Perron / platform -- */
+  .r-perron{display:flex;align-items:center;justify-content:center}
+  .perron-tag{
+    padding:.25vh .7vw;
+    border-radius:.3vh;
+    background:rgba(69,230,195,.1);
+    border:1px solid var(--accent-dim);
+    font-size:1.4vh;font-weight:700;
+    color:var(--accent);
+    letter-spacing:.05em;
+    white-space:nowrap;
+  }
+
+  /* ===== FOOTER ===== */
+  .ftr{
+    background:var(--teal-deep);
+    border-top:1px solid var(--border);
+    height:5vh;display:flex;align-items:center;
+    padding:0 2.5vw;overflow:hidden;
+    position:relative;
+  }
+
+  .ftr::before{
+    content:'';position:absolute;top:0;left:0;right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,var(--accent-dim),transparent);
+  }
+
+  .ftr-tag{
+    flex-shrink:0;
+    background:var(--accent);color:var(--teal-deep);
+    padding:.3vh .7vw;font-size:1.1vh;font-weight:800;
+    text-transform:uppercase;letter-spacing:.12em;
+    border-radius:.2vh;margin-right:1.5vw;
+  }
+
+  .ticker-w{flex:1;overflow:hidden}
+  .ticker{
+    display:inline-block;white-space:nowrap;
+    animation:scroll 50s linear infinite;
+    font-size:1.5vh;color:var(--muted);font-weight:400;
+  }
+  .ticker b{color:var(--accent);font-weight:600}
+  .ticker .s{margin:0 2vw;color:var(--border)}
+
+  @keyframes scroll{
+    from{transform:translateX(60vw)}to{transform:translateX(-100%)}
+  }
+
+  /* ===== STATES ===== */
+  .loader{
+    position:absolute;inset:0;background:var(--surface);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;
+    z-index:50;transition:opacity .6s;
+  }
+  .loader.gone{opacity:0;pointer-events:none}
+
+  .spin{
+    width:5vh;height:5vh;
+    border:.3vh solid var(--border);
+    border-top-color:var(--accent);border-radius:50%;
+    animation:sp .8s linear infinite;
+  }
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  .loader-t{font-size:1.8vh;color:var(--muted);font-weight:500}
+
+  .empty{
+    display:flex;align-items:center;justify-content:center;
+    height:100%;font-size:2vh;color:var(--muted);font-weight:500;
+  }
+
+  .toast{
+    position:fixed;bottom:7vh;left:50%;transform:translateX(-50%);
+    background:rgba(200,30,50,.92);padding:.7vh 1.4vw;border-radius:.4vh;
+    font-size:1.3vh;z-index:60;opacity:0;transition:opacity .3s;pointer-events:none;
+  }
+  .toast.on{opacity:1}
 </style>
 </head>
 <body>
-<div class="dash">
+
+<div class="board">
+  <!-- HEADER -->
   <div class="hdr">
-    <div class="hdr-l">
-      <div class="logo">🚗</div>
-      <div><div class="hdr-t">Verkeersinformatie Nederland</div><div class="hdr-s">Rijkswaterstaat — Live data</div></div>
+    <div class="hdr-left">
+      <div class="bus-icon">
+        <svg viewBox="0 0 24 24"><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg>
+      </div>
+      <div class="hdr-title">
+        <div class="hdr-station">Zwolle Station</div>
+        <div class="hdr-sub">Busvertrekbord</div>
+      </div>
     </div>
-    <div class="hdr-r">
-      <div class="err-msg" id="errMsg"></div>
-      <div class="live"><div class="ldot"></div>LIVE</div>
-      <div><div class="clk" id="clock">--:--:--</div><div class="dte" id="date">--</div></div>
+    <div class="hdr-right">
+      <div class="live">
+        <div class="live-dot" id="liveDot"></div>
+        <div class="live-txt">Live</div>
+      </div>
+      <div class="clock" id="clock">--:--<span class="clock-s">:--</span></div>
     </div>
   </div>
-  <div class="sp">
-    <div class="sc f"><div class="sl">Aantal files</div><div class="sv" id="numJams">--</div><div class="sd">op rijkswegen</div></div>
-    <div class="sc k"><div class="sl">Totaal kilometers</div><div class="sv" id="totalKm">--</div><div class="sd" id="kmSub">filekilometers</div></div>
-    <div class="sc d"><div class="sl">Totale vertraging</div><div class="sv" id="totalDelay">--</div><div class="sd" id="delaySub">extra reistijd</div></div>
-    <div class="sc w"><div class="sl">Werkzaamheden</div><div class="sv" id="numWorks">--</div><div class="sd">actieve locaties</div></div>
-    <div class="sc" style="border-left:3px solid var(--t3)"><div class="sl">Overig</div><div class="sv" id="numInc" style="color:var(--t3)">--</div><div class="sd">afsluitingen &amp; meldingen</div></div>
+
+  <!-- COLUMNS -->
+  <div class="cols">
+    <span>Vertrek</span>
+    <span>Lijn</span>
+    <span>Bestemming</span>
+    <span>Richting / via</span>
+    <span>Perron</span>
   </div>
-  <div class="mc">
-    <div class="sh"><div class="sht">📍 Actuele files &amp; vertragingen</div><div class="shb" id="ac">laden...</div></div>
-    <div class="tl" id="tlist"><div class="loading">Verkeersinformatie ophalen...</div></div>
+
+  <!-- ROWS -->
+  <div class="rows" id="rowsEl">
+    <div class="loader" id="loader">
+      <div class="spin"></div>
+      <div class="loader-t">Busvertrektijden laden...</div>
+    </div>
   </div>
-  <div class="rp">
-    <div class="sh"><div class="sht">🔧 Werkzaamheden &amp; afsluitingen</div></div>
-    <div class="wl" id="wlist"><div class="loading">Laden...</div></div>
+
+  <!-- FOOTER -->
+  <div class="ftr">
+    <div class="ftr-tag">Reisinformatie</div>
+    <div class="ticker-w">
+      <div class="ticker" id="ticker">
+        Welkom op busstation Zwolle
+        <span class="s">|</span>
+        Vertrektijden worden elke 30 seconden ververst
+        <span class="s">|</span>
+        Reisinformatie: 0900-9292
+      </div>
+    </div>
   </div>
 </div>
-<div class="tb"><div class="tbl">⚠️ MELDINGEN</div><div class="tbc" id="ticker"><span>Verkeersinformatie wordt geladen...</span></div></div>
+
+<div class="toast" id="toast"></div>
+
 <script>
-// Clock
-function updateClock(){
-  var n=new Date();
-  var d=["zondag","maandag","dinsdag","woensdag","donderdag","vrijdag","zaterdag"];
-  var m=["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
-  document.getElementById("clock").textContent=n.toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-  document.getElementById("date").textContent=d[n.getDay()]+" "+n.getDate()+" "+m[n.getMonth()]+" "+n.getFullYear();
-}
-setInterval(updateClock,1000);
-updateClock();
+(function(){
+  'use strict';
 
-function getSeverity(delay){
-  if(delay>=15) return "sev-h";
-  if(delay>=5) return "sev-m";
-  if(delay>0) return "sev-l";
-  return "sev-n";
-}
-function getRoadClass(road){
-  if(!road) return "nw";
-  return road.charAt(0)==="A"?"sw":"nw";
-}
-function formatKm(m){return m?(m/1000).toFixed(1)+" km":"";}
-function formatDelay(m){return m?"+"+Math.round(m)+" min":"";}
-function formatDate(iso){
-  if(!iso) return "";
-  try{var d=new Date(iso);return d.toLocaleDateString("nl-NL",{day:"numeric",month:"short",year:"numeric"});}
-  catch(e){return "";}
-}
-function escHtml(s){
-  if(!s) return "";
-  var d=document.createElement("div");
-  d.appendChild(document.createTextNode(s));
-  return d.innerHTML;
-}
+  // ====== CONFIG ======
+  // TPC codes voor bushaltes rondom Zwolle Station
+  // Zwolle busstation heeft meerdere perrons met eigen TPC codes.
+  // Standaard TPC: 46004007 = Busstation Station Zwolle (stopareacode).
+  // Als EBS-bussen (de meeste Zwolle stadslijnen) niet verschijnen,
+  // is dat een bekend OVapi-probleem. Dan handmatig TPC's toevoegen
+  // of overschakelen naar ovzoeker.nl/api als alternatieve bron.
+  //
+  // UPDATE DEZE LIJST met juiste TPC codes van je busperrons!
+  // Je vindt ze op ovzoeker.nl -> klik op halte -> haltenummer
 
-var API_URL="https://api.rwsverkeersinfo.nl/api/traffic/";
-var lastData=null;
-var workingMethod=-1;
-
-function getProxyUrls(){
-  var encoded=encodeURIComponent(API_URL);
-  return [
-    {url:API_URL, name:"direct", parse:"direct"},
-    {url:"https://api.allorigins.win/get?url="+encoded, name:"allorigins", parse:"allorigins"},
-    {url:"https://corsproxy.io/?url="+encoded, name:"corsproxy.io", parse:"direct"},
-    {url:"https://api.codetabs.com/v1/proxy?quest="+encoded, name:"codetabs", parse:"direct"}
+  const TPC_CODES = [
+    '46004007',  // Busstation Station, Zwolle (hoofd)
+    '46004000',  // Station perron varianten
+    '46004001',
+    '46004002',
+    '46004003',
+    '46004004',
+    '46004005',
+    '46004006',
+    '46004008',
+    '46004009',
+    '46004010',
   ];
-}
 
-async function tryFetch(entry){
-  var controller=new AbortController();
-  var timeout=setTimeout(function(){controller.abort();},8000);
-  try{
-    var res=await fetch(entry.url,{signal:controller.signal});
-    clearTimeout(timeout);
-    if(!res.ok) throw new Error("HTTP "+res.status);
-    if(entry.parse==="allorigins"){
-      var wrapper=await res.json();
-      return JSON.parse(wrapper.contents);
+  const REFRESH = 30000;
+  const MAX_ROWS = 11;
+
+  // CORS proxies to try (direct first for Yodeck kiosk)
+  const PROXIES = [
+    '',
+    'https://corsproxy.io/?',
+    'https://api.allorigins.win/raw?url=',
+  ];
+
+  let proxyIdx = 0;
+  let first = true;
+  let errN = 0;
+
+  // ====== CLOCK ======
+  function pad(n){return String(n).padStart(2,'0')}
+  function tick(){
+    const d=new Date();
+    document.getElementById('clock').innerHTML =
+      pad(d.getHours())+':'+pad(d.getMinutes())+
+      '<span class="clock-s">:'+pad(d.getSeconds())+'</span>';
+  }
+  setInterval(tick,1000);tick();
+
+  // ====== FETCH ======
+  async function tryFetch(url){
+    for(let i=0;i<PROXIES.length;i++){
+      const pi=(proxyIdx+i)%PROXIES.length;
+      const p=PROXIES[pi];
+      const u=p?p+encodeURIComponent(url):url;
+      try{
+        const r=await fetch(u,{headers:{'Accept':'application/json'},cache:'no-store',signal:AbortSignal.timeout(10000)});
+        if(!r.ok) continue;
+        const d=await r.json();
+        proxyIdx=pi;
+        return d;
+      }catch(e){continue}
     }
-    return await res.json();
-  }catch(e){
-    clearTimeout(timeout);
-    throw e;
+    return null;
   }
-}
 
-async function fetchData(){
-  var proxies=getProxyUrls();
-  // If we found a working method before, try that first
-  if(workingMethod>=0){
-    var reordered=[proxies[workingMethod]];
-    for(var j=0;j<proxies.length;j++){if(j!==workingMethod)reordered.push(proxies[j]);}
-    proxies=reordered;
+  // ====== PARSE OVapi ======
+  function parseOvapi(data){
+    if(!data||typeof data!=='object') return [];
+    const deps=[];
+    const now=Date.now();
+
+    for(const k1 of Object.keys(data)){
+      const l1=data[k1];
+      if(!l1||typeof l1!=='object') continue;
+
+      // Find Passes at any nesting level
+      const containers=l1.Passes?[l1]:Object.values(l1).filter(v=>v&&v.Passes);
+
+      for(const c of containers){
+        if(!c.Passes) continue;
+        for(const pk of Object.keys(c.Passes)){
+          const p=c.Passes[pk];
+          if(!p) continue;
+
+          const exp=p.ExpectedDepartureTime;
+          const plan=p.TargetDepartureTime;
+          if(!exp&&!plan) continue;
+
+          const depD=new Date(exp||plan);
+          if(isNaN(depD.getTime())) continue;
+          if(depD.getTime()<now-120000) continue;
+
+          const planD=plan?new Date(plan):depD;
+          const delay=Math.max(0,Math.round((depD-planD)/60000));
+          const cancelled=p.TripStopStatus==='CANCEL';
+
+          // Extract perron from TimingPointName if available
+          let perron='';
+          const tpName=p.TimingPointName||'';
+          const perronMatch=tpName.match(/[Pp]erron\s*([A-Z0-9]+)/i);
+          if(perronMatch) perron=perronMatch[1];
+
+          // Also try UserStopOrderNumber or similar
+          if(!perron && p.UserStopOrderNumber) perron=String(p.UserStopOrderNumber);
+
+          deps.push({
+            time:pad(planD.getHours())+':'+pad(planD.getMinutes()),
+            timeMs:planD.getTime(),
+            delay:delay,
+            cancelled:cancelled,
+            line:p.LinePublicNumber||p.LinePlanningNumber||'',
+            destination:p.DestinationName50||p.DestinationCode||'Onbekend',
+            via:p.Via||'',
+            direction:p.LineDirection===1?'Heen':'Terug',
+            perron:perron,
+            operator:p.DataOwnerCode||'',
+            tpName:tpName,
+          });
+        }
+      }
+    }
+
+    // De-duplicate by line+time+destination
+    const seen=new Set();
+    const unique=[];
+    for(const d of deps){
+      const key=d.line+'|'+d.time+'|'+d.destination;
+      if(seen.has(key)) continue;
+      seen.add(key);
+      unique.push(d);
+    }
+
+    return unique;
   }
-  for(var i=0;i<proxies.length;i++){
-    try{
-      console.log("Trying: "+proxies[i].name);
-      var data=await tryFetch(proxies[i]);
-      if(!data||!data.obstructions) throw new Error("Invalid data");
-      lastData=data;
-      // Remember which one worked
-      var allP=getProxyUrls();
-      for(var k=0;k<allP.length;k++){if(allP[k].name===proxies[i].name)workingMethod=k;}
-      document.getElementById("errMsg").style.display="none";
-      console.log("Success via: "+proxies[i].name);
-      render(data);
+
+  // ====== MAIN ======
+  async function refresh(){
+    // Build TPC URL (OVapi supports comma-separated TPC codes)
+    const tpcUrl='https://v0.ovapi.nl/tpc/'+TPC_CODES.join(',');
+    const data=await tryFetch(tpcUrl);
+
+    let deps=[];
+    if(data){
+      deps=parseOvapi(data);
+    }
+
+    if(deps.length===0){
+      errN++;
+      if(errN>=3) showToast('Kan busvertrektijden niet ophalen - controleer TPC codes');
+      if(first){first=false;hideLoader()}
       return;
-    }catch(e){
-      console.warn(proxies[i].name+" failed:",e.message||e);
     }
-  }
-  console.error("All fetch methods failed");
-  var el=document.getElementById("errMsg");
-  el.textContent="Kan data niet ophalen. Herpoging over 2 min.";
-  el.style.display="block";
-  if(lastData) render(lastData);
-}
 
-function render(data){
-  var obs=data.obstructions||[];
-  var jams=obs.filter(function(o){return o.obstructionType===4;});
-  var works=obs.filter(function(o){return o.obstructionType===1||o.obstructionType===22;});
-  var other=obs.filter(function(o){return o.obstructionType!==4&&o.obstructionType!==1&&o.obstructionType!==22;});
-  jams.sort(function(a,b){return(b.delay||0)-(a.delay||0);});
+    errN=0;hideToast();
 
-  var totalKm=0,totalDelay=0;
-  jams.forEach(function(j){totalKm+=(j.length||0);totalDelay+=(j.delay||0);});
+    deps.sort((a,b)=>a.timeMs-b.timeMs);
+    deps=deps.slice(0,MAX_ROWS);
 
-  document.getElementById("numJams").textContent=data.numberOfJams||jams.length;
-  document.getElementById("totalKm").textContent=(totalKm/1000).toFixed(1)+" km";
-  document.getElementById("kmSub").textContent="over "+jams.length+" trajecten";
-  document.getElementById("totalDelay").textContent=Math.round(totalDelay)+" min";
-  document.getElementById("delaySub").textContent=jams.length>0?"gem. "+Math.round(totalDelay/jams.length)+" min per file":"geen files";
-  document.getElementById("numWorks").textContent=data.numberOfRoadWorks||works.length;
-  document.getElementById("numInc").textContent=other.length;
-  document.getElementById("ac").textContent=jams.length+" actief";
+    render(deps);
+    updateTicker(deps);
 
-  var tl=document.getElementById("tlist");
-  if(jams.length===0){
-    tl.innerHTML='<div class="nf"><div class="nf-icon">\u2705</div><h3>Geen files!</h3><div>De wegen zijn vrij</div></div>';
-  }else{
-    tl.innerHTML=jams.map(function(j){
-      var sev=getSeverity(j.delay);
-      var rc=getRoadClass(j.roadNumber);
-      return '<div class="ti '+sev+'">'
-        +'<div class="rb '+rc+'">'+escHtml(j.roadNumber||"?")
-        +'<div class="rd">'+escHtml(j.directionText||"")+'</div></div>'
-        +'<div class="tih"><h3>'+escHtml(j.title||"Vertraging")+'</h3>'
-        +'<p>'+escHtml(j.locationText||"")+'</p>'
-        +(j.cause?'<div class="cs">'+escHtml(j.cause)+'</div>':"")+'</div>'
-        +'<div class="tis">'+(j.delay?'<div class="db">'+formatDelay(j.delay)+'</div>':"")
-        +(j.length?'<div class="kb">'+formatKm(j.length)+'</div>':"")
-        +'</div></div>';
-    }).join("");
+    if(first){first=false;hideLoader()}
   }
 
-  var allRight=works.concat(other);
-  allRight.sort(function(a,b){return(b.hindrance||0)-(a.hindrance||0);});
-  var wl=document.getElementById("wlist");
-  if(allRight.length===0){
-    wl.innerHTML='<div class="nf"><div class="nf-icon">\u2705</div><h3>Geen meldingen</h3></div>';
-  }else{
-    wl.innerHTML=allRight.map(function(w){
-      var endDate=w.timeEnd?" - Tot "+formatDate(w.timeEnd):"";
-      return '<div class="wli">'
-        +'<div class="wr">'+escHtml(w.roadNumber||"")+" - "+escHtml(w.title||"")+'</div>'
-        +'<div class="wdir">'+escHtml(w.directionText||"")+'</div>'
-        +(w.description?'<div class="wds">'+escHtml(w.description)+'</div>':"")
-        +'<div class="wds">'+escHtml(w.locationText||"")+'</div>'
-        +(endDate?'<div class="wp">'+escHtml(endDate)+'</div>':"")+'</div>';
-    }).join("");
+  // ====== RENDER ======
+  function render(deps){
+    const el=document.getElementById('rowsEl');
+    const loader=el.querySelector('.loader');
+
+    if(!deps.length){
+      el.innerHTML='<div class="empty">Geen busvertrektijden beschikbaar</div>';
+      if(loader&&!loader.classList.contains('gone')) el.appendChild(loader);
+      return;
+    }
+
+    let h='';
+    deps.forEach((d,i)=>{
+      const cls='row'+(d.cancelled?' cancelled':'');
+      const dly=.03*i;
+
+      h+='<div class="'+cls+'" style="animation-delay:'+dly+'s">';
+
+      // Time
+      h+='<div class="r-time">';
+      h+='<div class="r-time-val">'+d.time+'</div>';
+      if(d.cancelled) h+='<div class="r-cancel">Vervalt</div>';
+      else if(d.delay>0) h+='<div class="r-delay'+(d.delay>=5?' bad':'')+'">+'+d.delay+' min</div>';
+      h+='</div>';
+
+      // Line number
+      h+='<div class="r-line">';
+      const lineN=d.line||'?';
+      const lineClass=getLineClass(lineN);
+      h+='<div class="line-badge '+lineClass+'">'+esc(lineN)+'</div>';
+      h+='</div>';
+
+      // Destination
+      h+='<div class="r-dest-wrap">';
+      h+='<div class="r-dest">'+esc(d.destination)+'</div>';
+      if(d.operator) h+='<div class="r-operator">'+esc(formatOperator(d.operator))+'</div>';
+      h+='</div>';
+
+      // Via
+      h+='<div class="r-via">';
+      if(d.via) h+='<b>via</b>'+esc(d.via);
+      else if(d.tpName && d.tpName.length>3) h+='<b>halte</b>'+esc(d.tpName);
+      h+='</div>';
+
+      // Perron
+      h+='<div class="r-perron">';
+      if(d.perron) h+='<div class="perron-tag">Perron '+esc(d.perron)+'</div>';
+      h+='</div>';
+
+      h+='</div>';
+    });
+
+    el.innerHTML=h;
+    if(loader&&!loader.classList.contains('gone')) el.appendChild(loader);
   }
 
-  var msgs=obs.filter(function(o){return o.delay>0||o.obstructionType===7;}).map(function(o){
-    return "<span><strong>"+escHtml(o.roadNumber||"")+"</strong> "+escHtml(o.directionText||"")+": "
-      +escHtml(o.title||"")+" "+escHtml(o.locationText||"")
-      +(o.delay?" (+"+Math.round(o.delay)+" min)":"")
-      +(o.cause?" - "+escHtml(o.cause):"")+"</span>";
-  });
-  if(msgs.length===0) msgs=["<span>Geen bijzonderheden op dit moment</span>"];
-  var tickerHtml=msgs.join("  \u2022  ");
-  document.getElementById("ticker").innerHTML=tickerHtml+tickerHtml;
-}
+  // ====== HELPERS ======
+  function esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'):''}
 
-fetchData();
-setInterval(fetchData,120000);
+  function getLineClass(line){
+    const n=String(line).replace(/\D/g,'');
+    const map=['1','2','3','4','5','7','8','9','11','29'];
+    return map.includes(n)?'line-'+n:'';
+  }
+
+  function formatOperator(code){
+    const map={
+      'EBS':'EBS',
+      'ARR':'Arriva',
+      'QBUZZ':'Qbuzz',
+      'CXX':'Connexxion',
+      'RET':'RET',
+      'GVB':'GVB',
+      'KEOLIS':'Keolis',
+      'HTM':'HTM',
+      'OVR':'OV Regio IJsselmond',
+      'SYNTUS':'Keolis',
+    };
+    return map[code]||code;
+  }
+
+  // ====== TICKER ======
+  function updateTicker(deps){
+    const el=document.getElementById('ticker');
+    if(!el) return;
+    const now=new Date();
+    const ts=pad(now.getHours())+':'+pad(now.getMinutes());
+    const sep=' <span class="s">|</span> ';
+
+    const p=['Welkom op busstation Zwolle'];
+    p.push('Laatste update: <b>'+ts+'</b>');
+
+    const delayed=deps.filter(d=>d.delay>0&&!d.cancelled);
+    const cancelled=deps.filter(d=>d.cancelled);
+
+    delayed.forEach(d=>{
+      p.push('Lijn <b>'+esc(d.line)+'</b> naar '+esc(d.destination)+': <b>+'+d.delay+' min</b>');
+    });
+    cancelled.forEach(d=>{
+      p.push('Lijn <b>'+esc(d.line)+'</b> naar '+esc(d.destination)+': <b>vervalt</b>');
+    });
+
+    if(!delayed.length&&!cancelled.length) p.push('Alle bussen rijden op tijd');
+    p.push('Reisinformatie: 0900-9292');
+    p.push('OV-chipkaart: in- en uitchecken niet vergeten');
+
+    el.innerHTML=p.join(sep);
+  }
+
+  // ====== UI ======
+  function hideLoader(){const l=document.getElementById('loader');if(l)l.classList.add('gone')}
+  function showToast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('on');document.getElementById('liveDot').classList.add('err')}
+  function hideToast(){const e=document.getElementById('toast');e.classList.remove('on');document.getElementById('liveDot').classList.remove('err')}
+
+  // ====== START ======
+  refresh();
+  setInterval(refresh,REFRESH);
+
+})();
 </script>
 </body>
 </html>
