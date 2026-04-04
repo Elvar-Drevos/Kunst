@@ -5,559 +5,512 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Digital Signage</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
-
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
-  html, body {
+  html { height: 100%; }
+  body {
     font-family: 'Inter', sans-serif;
-    background: #0a0a0a;
+    background: #000;
     color: #fff;
+    height: 100%;
     overflow: hidden;
+  }
+
+  /* ═══ ROCK-SOLID LAYOUT ═══
+     Wrapper is 100vh, split into slideshow + ticker.
+     Nothing can overlap. */
+  #wrapper {
+    display: flex;
+    flex-direction: column;
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
   }
-
-  /* ── Layout: slideshow above ticker ── */
   #slideshow {
-    width: 100%;
-    height: calc(100vh - 52px);
+    flex: 1 1 0;
+    min-height: 0;
     position: relative;
     overflow: hidden;
   }
-
-  #ticker {
-    width: 100%;
+  #ticker-bar {
+    flex: 0 0 52px;
     height: 52px;
-    position: relative;
-    z-index: 100;
-    background: #111;
-    border-top: 2px solid #222;
-    flex-shrink: 0;
+    max-height: 52px;
+    width: 100%;
+    overflow: hidden;
+    background: #0a0a0a;
+    border-top: 2px solid rgba(255,255,255,0.08);
   }
-  #ticker iframe {
+  #ticker-bar iframe {
     width: 100%;
     height: 100%;
     border: none;
+    display: block;
   }
 
-  /* ── Slides ── */
+  /* ═══ SLIDES ═══ */
   .slide {
     position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
+    inset: 0;
     opacity: 0;
-    transition: opacity 1.2s ease-in-out;
+    transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
   }
-  .slide.active {
-    opacity: 1;
-    pointer-events: auto;
-    z-index: 2;
-  }
-  .slide iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: #111;
-  }
+  .slide.active { opacity: 1; pointer-events: auto; z-index: 2; }
+  .slide iframe { width: 100%; height: 100%; border: none; background: #0a0a0a; }
 
-  /* ── Progress bar ── */
+  /* ═══ PROGRESS BAR ═══ */
   #progress-bar {
-    position: fixed;
-    top: 0; left: 0;
+    position: absolute; top: 0; left: 0;
     height: 3px;
-    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb);
+    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
+    background-size: 300% 100%;
+    animation: shimmer 3s linear infinite;
     z-index: 50;
-    transition: width 0.3s linear;
   }
+  @keyframes shimmer { 0%{background-position:0% 0} 100%{background-position:300% 0} }
 
-  /* ══════════════════════════════════
-     1. CLOCK SLIDE — Zwolle background
-     ══════════════════════════════════ */
-  #slide-clock {
-    flex-direction: column;
-    gap: 10px;
-    background: #000;
-  }
+  /* ═══════════════════════════════════
+     1. CLOCK — Zwolle luchtfoto
+     ═══════════════════════════════════ */
+  #slide-clock { flex-direction: column; background: #000; }
   #slide-clock .bg {
-    position: absolute;
-    inset: 0;
-    background-image: url('https://images.unsplash.com/photo-1622718446797-a43935fa3e91?w=1920&q=80');
+    position: absolute; inset: 0;
+    /* Uses local zwolle.jpg, falls back to wikimedia */
+    background-image: url('zwolle.jpg'), url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Zwolle_Skyline_Rodetorenplein_04.JPG/1280px-Zwolle_Skyline_Rodetorenplein_04.JPG');
     background-size: cover;
-    background-position: center;
-    filter: brightness(0.4) saturate(1.2);
+    background-position: center 40%;
+    filter: brightness(0.32) saturate(1.3);
+  }
+  #slide-clock .overlay {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.55) 100%),
+      linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.4) 100%);
   }
   #slide-clock .content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center;
   }
   #clock-time {
-    font-size: 14vw;
-    font-weight: 900;
-    letter-spacing: -0.02em;
+    font-size: 18vw; font-weight: 900; letter-spacing: -0.04em;
     color: #fff;
-    text-shadow: 0 0 80px rgba(102,126,234,0.5), 0 4px 20px rgba(0,0,0,0.6);
+    text-shadow: 0 0 150px rgba(102,126,234,0.35), 0 0 60px rgba(118,75,162,0.25), 0 6px 40px rgba(0,0,0,0.9);
     line-height: 1;
   }
   #clock-seconds {
-    font-size: 4vw;
-    font-weight: 300;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 0.4em;
+    font-size: 3vw; font-weight: 300;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 0.8em;
+    margin-top: 0.3vw;
   }
   #clock-date {
-    font-size: 2.6vw;
-    font-weight: 300;
-    color: rgba(255,255,255,0.7);
-    margin-top: 10px;
+    font-size: 2.2vw; font-weight: 300;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2vw;
     text-transform: capitalize;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    text-shadow: 0 2px 20px rgba(0,0,0,0.7);
+    letter-spacing: 0.08em;
   }
   #clock-location {
-    font-size: 1.2vw;
-    font-weight: 600;
-    color: rgba(255,255,255,0.35);
-    letter-spacing: 0.5em;
+    font-size: 0.85vw; font-weight: 600;
+    color: rgba(255,255,255,0.2);
+    letter-spacing: 0.8em;
     text-transform: uppercase;
-    margin-top: 1vw;
+    margin-top: 2.5vw;
+    padding: 0.5vw 2.5vw;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 100px;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.03);
   }
 
-  /* ══════════════════════════════════
-     2. WEATHER SLIDE
-     ══════════════════════════════════ */
-  #slide-weather {
-    flex-direction: column;
-    background: #000;
-    overflow: hidden;
-  }
+  /* ═══════════════════════════════════
+     2. WEATHER — uitgebreid
+     ═══════════════════════════════════ */
+  #slide-weather { flex-direction: column; background: #000; }
   #slide-weather .weather-bg {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    filter: brightness(0.35) saturate(1.3);
-    transition: background-image 1s ease;
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    filter: brightness(0.28) saturate(1.5);
+    transition: background-image 1.5s ease;
   }
-  #slide-weather .weather-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    padding: 3vw 4vw;
-    height: 100%;
-    justify-content: center;
+  #slide-weather .weather-overlay {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.5) 100%),
+      radial-gradient(ellipse at 30% 40%, rgba(100,130,255,0.06), transparent 60%);
+  }
+  .weather-content {
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; align-items: center;
+    width: 100%; height: 100%;
+    justify-content: center; padding: 2vw;
   }
   .weather-city {
-    font-size: 1.4vw;
-    font-weight: 600;
-    color: rgba(255,255,255,0.4);
-    letter-spacing: 0.5em;
-    text-transform: uppercase;
-    margin-bottom: 1vw;
+    font-size: 1vw; font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.7em; text-transform: uppercase;
+    margin-bottom: 1.5vw;
+    padding: 0.4vw 2vw;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 100px;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.03);
   }
-  .weather-main {
-    display: flex;
-    align-items: center;
-    gap: 2vw;
-    margin-bottom: 1vw;
-  }
-  .weather-icon { font-size: 8vw; line-height: 1; }
+  .weather-main { display: flex; align-items: center; gap: 2vw; margin-bottom: 0.5vw; }
+  .weather-icon { font-size: 9vw; line-height: 1; filter: drop-shadow(0 0 40px rgba(255,255,255,0.1)); }
   .weather-temp-block { text-align: center; }
   .weather-temp {
-    font-size: 10vw;
-    font-weight: 900;
-    color: #fff;
-    line-height: 1;
-    text-shadow: 0 0 60px rgba(255,255,255,0.15);
+    font-size: 12vw; font-weight: 900; color: #fff; line-height: 1;
+    text-shadow: 0 0 80px rgba(255,255,255,0.08);
   }
   .weather-desc {
-    font-size: 2.2vw;
-    font-weight: 300;
-    color: rgba(255,255,255,0.7);
-    text-transform: capitalize;
-    margin-top: 0.5vw;
+    font-size: 2.2vw; font-weight: 400;
+    color: rgba(255,255,255,0.6);
+    text-transform: capitalize; margin-top: 0.3vw;
   }
-  .weather-details {
-    display: flex;
-    gap: 3vw;
-    font-size: 1.3vw;
-    color: rgba(255,255,255,0.5);
-    margin: 2vw 0;
+  .weather-stats {
+    display: flex; gap: 1.2vw;
+    margin: 2vw 0 1.5vw;
   }
-  .weather-details span { display: flex; align-items: center; gap: 0.4vw; }
-
-  /* Hourly forecast strip */
+  .weather-stat {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0.7vw 1.4vw;
+    background: rgba(255,255,255,0.05);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+    min-width: 7vw;
+  }
+  .weather-stat .ws-label {
+    font-size: 0.7vw; font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 0.3vw;
+  }
+  .weather-stat .ws-val {
+    font-size: 1.2vw; font-weight: 700;
+    color: rgba(255,255,255,0.8);
+  }
   .weather-hourly {
-    display: flex;
-    gap: 1.5vw;
-    margin-top: 1.5vw;
-    padding: 1.2vw 2vw;
-    background: rgba(255,255,255,0.06);
-    border-radius: 16px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.08);
+    display: flex; gap: 0; margin-top: 0.8vw;
+    background: rgba(255,255,255,0.04);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.06);
+    overflow: hidden;
   }
   .weather-hour {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.4vw;
-    min-width: 4.5vw;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0.3vw; padding: 0.8vw 1.4vw;
+    border-right: 1px solid rgba(255,255,255,0.04);
   }
-  .weather-hour .wh-time {
-    font-size: 0.9vw;
-    color: rgba(255,255,255,0.4);
-    font-weight: 600;
-  }
-  .weather-hour .wh-icon { font-size: 2vw; }
-  .weather-hour .wh-temp {
-    font-size: 1.2vw;
-    font-weight: 700;
-    color: rgba(255,255,255,0.85);
-  }
-  .weather-hour .wh-rain {
-    font-size: 0.75vw;
-    color: #5bc0f8;
-  }
+  .weather-hour:last-child { border-right: none; }
+  .weather-hour .wh-time { font-size: 0.8vw; color: rgba(255,255,255,0.3); font-weight: 600; }
+  .weather-hour .wh-icon { font-size: 1.6vw; }
+  .weather-hour .wh-temp { font-size: 1vw; font-weight: 700; color: rgba(255,255,255,0.85); }
+  .weather-hour .wh-rain { font-size: 0.65vw; color: #5bc0f8; font-weight: 500; }
 
-  /* ══════════════════════════════════
-     NEWS SLIDES (shared)
-     ══════════════════════════════════ */
-  .news-slide {
-    flex-direction: column;
-    padding: 0;
-    overflow: hidden;
-  }
+  /* ═══════════════════════════════════
+     NEWS SLIDES
+     ═══════════════════════════════════ */
+  .news-slide { padding: 0; overflow: hidden; }
   .news-slide .news-bg {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    filter: blur(40px) brightness(0.25) saturate(1.5);
-    transform: scale(1.2);
+    position: absolute; inset: -60px;
+    background-size: cover; background-position: center;
+    filter: blur(60px) brightness(0.18) saturate(2);
+  }
+  .news-slide .news-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%);
   }
   .news-slide .news-inner {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column;
+    width: 100%; height: 100%;
     padding: 2.5vw 4vw 2vw;
   }
-
-  /* Logo bar */
   .news-logo-bar {
-    display: flex;
-    align-items: center;
-    gap: 1vw;
-    margin-bottom: 1.5vw;
+    display: flex; align-items: center; gap: 1vw;
+    margin-bottom: 1.5vw; flex-shrink: 0;
   }
-  .news-logo-bar img {
-    height: 3vw;
-    object-fit: contain;
-    filter: brightness(10);
-  }
+  .news-logo-bar img { height: 2.8vw; object-fit: contain; }
   .news-logo-bar .news-time-ago {
     margin-left: auto;
-    font-size: 1.1vw;
-    color: rgba(255,255,255,0.4);
-    font-weight: 400;
+    font-size: 0.9vw; color: rgba(255,255,255,0.35); font-weight: 500;
+    padding: 0.3vw 1vw;
+    background: rgba(255,255,255,0.06);
+    border-radius: 100px;
+    border: 1px solid rgba(255,255,255,0.06);
   }
-
-  /* Card */
   .news-card {
-    display: flex;
-    gap: 3vw;
-    flex: 1;
-    min-height: 0;
-    width: 100%;
+    display: flex; gap: 3vw;
+    flex: 1; min-height: 0; width: 100%;
   }
   .news-card img.news-thumb {
-    width: 42%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 20px;
-    flex-shrink: 0;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    width: 42%; height: 100%;
+    object-fit: cover; border-radius: 20px; flex-shrink: 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
   }
   .news-card-text {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    flex: 1; display: flex; flex-direction: column;
     justify-content: center;
-    min-height: 0;
-    overflow: hidden;
+    min-height: 0; overflow: hidden; padding-right: 1vw;
   }
   .news-card-text h2 {
-    font-size: 2.8vw;
-    font-weight: 700;
-    line-height: 1.25;
-    margin-bottom: 1.5vw;
-    color: #fff;
+    font-size: 2.6vw; font-weight: 700;
+    line-height: 1.25; margin-bottom: 1.5vw;
+    color: #fff; flex-shrink: 0;
   }
   .news-card-text .news-desc-wrap {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-    position: relative;
-    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    flex: 1; min-height: 0;
+    overflow: hidden; position: relative;
+  }
+  .news-card-text .news-desc-wrap::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 5vw;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.85));
+    pointer-events: none; z-index: 3;
   }
   .news-card-text .news-desc-wrap p {
-    font-size: 1.5vw;
-    line-height: 1.7;
-    color: rgba(255,255,255,0.6);
-  }
-  /* auto-scroll long text */
-  .news-card-text .news-desc-wrap.scrolling p {
-    animation: scrollText var(--scroll-duration, 8s) linear 2s 1;
-  }
-  @keyframes scrollText {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(var(--scroll-distance, -200px)); }
+    font-size: 1.4vw; line-height: 1.75;
+    color: rgba(255,255,255,0.5); position: relative;
   }
 
-  /* Source-specific accent colors */
+  /* Source accents */
   .nos-slide { background: #0d0808; }
   .nos-slide .news-card-text h2 { color: #ffcfaa; }
+  .nos-slide .news-logo-bar img { filter: none; }
+
   .nyt-slide { background: #0d0d0d; }
   .nyt-slide .news-card-text h2 { color: #e8e8e8; }
+  .nyt-slide .news-logo-bar img { filter: invert(1); height: 2vw; }
+
   .sky-slide { background: #080d18; }
   .sky-slide .news-card-text h2 { color: #c8d8f0; }
-  .tweakers-slide { background: #0a0d08; }
-  .tweakers-slide .news-card-text h2 { color: #c8e6a0; }
-
-  /* NOS logo brightness fix */
-  .nos-slide .news-logo-bar img { filter: none; }
-  .nyt-slide .news-logo-bar img { filter: invert(1); }
   .sky-slide .news-logo-bar img { filter: none; }
-  .tweakers-slide .news-logo-bar img { filter: none; }
+
+  .bright-slide { background: #0d0a08; }
+  .bright-slide .news-card-text h2 { color: #ffd699; }
+  .bright-logo {
+    font-size: 2.5vw; font-weight: 900;
+    color: #f90; letter-spacing: -0.03em; text-transform: lowercase;
+  }
 </style>
 </head>
 <body>
 
-<div id="progress-bar"></div>
+<div id="wrapper">
+  <div id="slideshow">
+    <div id="progress-bar"></div>
 
-<div id="slideshow">
-
-  <!-- ═══ 1. KLOK ═══ -->
-  <div class="slide active" id="slide-clock" data-duration="12000">
-    <div class="bg"></div>
-    <div class="content">
-      <div id="clock-time">00:00</div>
-      <div id="clock-seconds">00</div>
-      <div id="clock-date"></div>
-      <div id="clock-location">Zwolle</div>
+    <!-- 1. KLOK -->
+    <div class="slide active" id="slide-clock" data-duration="12000">
+      <div class="bg"></div>
+      <div class="overlay"></div>
+      <div class="content">
+        <div id="clock-time">00:00</div>
+        <div id="clock-seconds">00</div>
+        <div id="clock-date"></div>
+        <div id="clock-location">Zwolle, Overijssel</div>
+      </div>
     </div>
-  </div>
 
-  <!-- ═══ 2. WEER ═══ -->
-  <div class="slide" id="slide-weather" data-duration="15000">
-    <div class="weather-bg" id="weather-bg"></div>
-    <div class="weather-content">
-      <div class="weather-city">Zwolle</div>
-      <div class="weather-main">
-        <div class="weather-icon" id="w-icon"></div>
-        <div class="weather-temp-block">
-          <div class="weather-temp" id="w-temp">--°</div>
-          <div class="weather-desc" id="w-desc">Laden...</div>
+    <!-- 2. WEER -->
+    <div class="slide" id="slide-weather" data-duration="15000">
+      <div class="weather-bg" id="weather-bg"></div>
+      <div class="weather-overlay"></div>
+      <div class="weather-content">
+        <div class="weather-city">Zwolle</div>
+        <div class="weather-main">
+          <div class="weather-icon" id="w-icon"></div>
+          <div class="weather-temp-block">
+            <div class="weather-temp" id="w-temp">--°</div>
+            <div class="weather-desc" id="w-desc">Laden...</div>
+          </div>
         </div>
-      </div>
-      <div class="weather-details">
-        <span id="w-feel">Gevoels: --°</span>
-        <span id="w-wind">Wind: -- km/h</span>
-        <span id="w-hum">Luchtvochtigheid: --%</span>
-        <span id="w-uv">UV: --</span>
-      </div>
-      <div class="weather-hourly" id="w-hourly"></div>
-    </div>
-  </div>
-
-  <!-- ═══ 3. TREINEN ═══ -->
-  <div class="slide" data-duration="20000">
-    <iframe src="https://www.rijdendetreinen.nl/vertrektijden/station/zwolle?style=tb&time=alternate&lang=nl" loading="lazy"></iframe>
-  </div>
-
-  <!-- ═══ 4. TREINPOSITIES ═══ -->
-  <div class="slide" data-duration="20000">
-    <iframe src="https://treinposities.nl/" loading="lazy"></iframe>
-  </div>
-
-  <!-- ═══ 5. BUS ═══ -->
-  <div class="slide" data-duration="20000">
-    <iframe src="https://drgl.nl/stop/NL:S:46004007" loading="lazy"></iframe>
-  </div>
-
-  <!-- ═══ 6. NOS NIEUWS ═══ -->
-  <div class="slide news-slide nos-slide" id="nos-0" data-duration="10000">
-    <div class="news-bg" id="nos-bg-0"></div>
-    <div class="news-inner">
-      <div class="news-logo-bar">
-        <img src="https://static.cdnlogo.com/logos/n/78/nos.svg" alt="NOS">
-        <span class="news-time-ago" id="nos-ago-0"></span>
-      </div>
-      <div class="news-card">
-        <img class="news-thumb" id="nos-img-0" src="" alt="">
-        <div class="news-card-text">
-          <h2 id="nos-title-0">Laden...</h2>
-          <div class="news-desc-wrap" id="nos-wrap-0"><p id="nos-desc-0"></p></div>
+        <div class="weather-stats" id="w-stats">
+          <div class="weather-stat"><span class="ws-label">Gevoels</span><span class="ws-val" id="w-feel">--°</span></div>
+          <div class="weather-stat"><span class="ws-label">Wind</span><span class="ws-val" id="w-wind">--</span></div>
+          <div class="weather-stat"><span class="ws-label">Vochtigheid</span><span class="ws-val" id="w-hum">--%</span></div>
+          <div class="weather-stat"><span class="ws-label">UV-index</span><span class="ws-val" id="w-uv">--</span></div>
+          <div class="weather-stat"><span class="ws-label">Zicht</span><span class="ws-val" id="w-vis">--</span></div>
+          <div class="weather-stat"><span class="ws-label">Luchtdruk</span><span class="ws-val" id="w-pres">--</span></div>
         </div>
+        <div class="weather-hourly" id="w-hourly"></div>
       </div>
     </div>
-  </div>
-  <div class="slide news-slide nos-slide" id="nos-1" data-duration="10000">
-    <div class="news-bg" id="nos-bg-1"></div>
-    <div class="news-inner">
-      <div class="news-logo-bar">
-        <img src="https://static.cdnlogo.com/logos/n/78/nos.svg" alt="NOS">
-        <span class="news-time-ago" id="nos-ago-1"></span>
-      </div>
-      <div class="news-card">
-        <img class="news-thumb" id="nos-img-1" src="" alt="">
-        <div class="news-card-text">
-          <h2 id="nos-title-1">Laden...</h2>
-          <div class="news-desc-wrap" id="nos-wrap-1"><p id="nos-desc-1"></p></div>
+
+    <!-- 3. TREINEN -->
+    <div class="slide" data-duration="20000">
+      <iframe src="https://www.rijdendetreinen.nl/vertrektijden/station/zwolle?style=tb&time=alternate&lang=nl" loading="lazy"></iframe>
+    </div>
+
+    <!-- 4. BUS -->
+    <div class="slide" data-duration="20000">
+      <iframe src="https://drgl.nl/stop/NL:S:46004007" loading="lazy"></iframe>
+    </div>
+
+    <!-- 5-6. NOS -->
+    <div class="slide news-slide nos-slide" id="nos-0" data-duration="12000">
+      <div class="news-bg" id="nos-bg-0"></div><div class="news-overlay"></div>
+      <div class="news-inner">
+        <div class="news-logo-bar">
+          <img src="https://static.cdnlogo.com/logos/n/78/nos.svg" alt="NOS">
+          <span class="news-time-ago" id="nos-ago-0"></span>
+        </div>
+        <div class="news-card">
+          <img class="news-thumb" id="nos-img-0" src="" alt="">
+          <div class="news-card-text">
+            <h2 id="nos-title-0">Laden...</h2>
+            <div class="news-desc-wrap" id="nos-wrap-0"><p id="nos-desc-0"></p></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- ═══ 7. NYT ═══ -->
-  <div class="slide news-slide nyt-slide" id="nyt-0" data-duration="10000">
-    <div class="news-bg" id="nyt-bg-0"></div>
-    <div class="news-inner">
-      <div class="news-logo-bar">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/7/77/The_New_York_Times_logo.png" alt="NYT" style="height:2.2vw;">
-        <span class="news-time-ago" id="nyt-ago-0"></span>
-      </div>
-      <div class="news-card">
-        <img class="news-thumb" id="nyt-img-0" src="" alt="">
-        <div class="news-card-text">
-          <h2 id="nyt-title-0">Loading...</h2>
-          <div class="news-desc-wrap" id="nyt-wrap-0"><p id="nyt-desc-0"></p></div>
+    <div class="slide news-slide nos-slide" id="nos-1" data-duration="12000">
+      <div class="news-bg" id="nos-bg-1"></div><div class="news-overlay"></div>
+      <div class="news-inner">
+        <div class="news-logo-bar">
+          <img src="https://static.cdnlogo.com/logos/n/78/nos.svg" alt="NOS">
+          <span class="news-time-ago" id="nos-ago-1"></span>
+        </div>
+        <div class="news-card">
+          <img class="news-thumb" id="nos-img-1" src="" alt="">
+          <div class="news-card-text">
+            <h2 id="nos-title-1">Laden...</h2>
+            <div class="news-desc-wrap" id="nos-wrap-1"><p id="nos-desc-1"></p></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="slide news-slide nyt-slide" id="nyt-1" data-duration="10000">
-    <div class="news-bg" id="nyt-bg-1"></div>
-    <div class="news-inner">
-      <div class="news-logo-bar">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/7/77/The_New_York_Times_logo.png" alt="NYT" style="height:2.2vw;">
-        <span class="news-time-ago" id="nyt-ago-1"></span>
-      </div>
-      <div class="news-card">
-        <img class="news-thumb" id="nyt-img-1" src="" alt="">
-        <div class="news-card-text">
-          <h2 id="nyt-title-1">Loading...</h2>
-          <div class="news-desc-wrap" id="nyt-wrap-1"><p id="nyt-desc-1"></p></div>
+
+    <!-- 7-8. NYT -->
+    <div class="slide news-slide nyt-slide" id="nyt-0" data-duration="12000">
+      <div class="news-bg" id="nyt-bg-0"></div><div class="news-overlay"></div>
+      <div class="news-inner">
+        <div class="news-logo-bar">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/7/77/The_New_York_Times_logo.png" alt="NYT">
+          <span class="news-time-ago" id="nyt-ago-0"></span>
+        </div>
+        <div class="news-card">
+          <img class="news-thumb" id="nyt-img-0" src="" alt="">
+          <div class="news-card-text">
+            <h2 id="nyt-title-0">Loading...</h2>
+            <div class="news-desc-wrap" id="nyt-wrap-0"><p id="nyt-desc-0"></p></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- ═══ 8. SKY NEWS ═══ -->
-  <div class="slide news-slide sky-slide" id="sky-0" data-duration="10000">
-    <div class="news-bg" id="sky-bg-0"></div>
-    <div class="news-inner">
-      <div class="news-logo-bar">
-        <img src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
-        <span class="news-time-ago" id="sky-ago-0"></span>
-      </div>
-      <div class="news-card">
-        <img class="news-thumb" id="sky-img-0" src="" alt="">
-        <div class="news-card-text">
-          <h2 id="sky-title-0">Loading...</h2>
-          <div class="news-desc-wrap" id="sky-wrap-0"><p id="sky-desc-0"></p></div>
+    <div class="slide news-slide nyt-slide" id="nyt-1" data-duration="12000">
+      <div class="news-bg" id="nyt-bg-1"></div><div class="news-overlay"></div>
+      <div class="news-inner">
+        <div class="news-logo-bar">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/7/77/The_New_York_Times_logo.png" alt="NYT">
+          <span class="news-time-ago" id="nyt-ago-1"></span>
+        </div>
+        <div class="news-card">
+          <img class="news-thumb" id="nyt-img-1" src="" alt="">
+          <div class="news-card-text">
+            <h2 id="nyt-title-1">Loading...</h2>
+            <div class="news-desc-wrap" id="nyt-wrap-1"><p id="nyt-desc-1"></p></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="slide news-slide sky-slide" id="sky-1" data-duration="10000">
-    <div class="news-bg" id="sky-bg-1"></div>
-    <div class="news-inner">
-      <div class="news-logo-bar">
-        <img src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
-        <span class="news-time-ago" id="sky-ago-1"></span>
-      </div>
-      <div class="news-card">
-        <img class="news-thumb" id="sky-img-1" src="" alt="">
-        <div class="news-card-text">
-          <h2 id="sky-title-1">Loading...</h2>
-          <div class="news-desc-wrap" id="sky-wrap-1"><p id="sky-desc-1"></p></div>
+
+    <!-- 9-10. SKY NEWS -->
+    <div class="slide news-slide sky-slide" id="sky-0" data-duration="12000">
+      <div class="news-bg" id="sky-bg-0"></div><div class="news-overlay"></div>
+      <div class="news-inner">
+        <div class="news-logo-bar">
+          <img src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
+          <span class="news-time-ago" id="sky-ago-0"></span>
+        </div>
+        <div class="news-card">
+          <img class="news-thumb" id="sky-img-0" src="" alt="">
+          <div class="news-card-text">
+            <h2 id="sky-title-0">Loading...</h2>
+            <div class="news-desc-wrap" id="sky-wrap-0"><p id="sky-desc-0"></p></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- ═══ 9. GESCHIEDENIS ═══ -->
-  <div class="slide" data-duration="20000">
-    <iframe src="https://thomaz1200.github.io/Geschiedenis/" loading="lazy"></iframe>
-  </div>
-
-  <!-- ═══ 10. TWEAKERS ═══ -->
-  <div class="slide news-slide tweakers-slide" id="tw-0" data-duration="10000">
-    <div class="news-bg" id="tw-bg-0"></div>
-    <div class="news-inner">
-      <div class="news-logo-bar">
-        <img src="https://static.cdnlogo.com/logos/t/79/tweakers.svg" alt="Tweakers" style="height:2.5vw;">
-        <span class="news-time-ago" id="tw-ago-0"></span>
-      </div>
-      <div class="news-card">
-        <img class="news-thumb" id="tw-img-0" src="" alt="">
-        <div class="news-card-text">
-          <h2 id="tw-title-0">Laden...</h2>
-          <div class="news-desc-wrap" id="tw-wrap-0"><p id="tw-desc-0"></p></div>
+    <div class="slide news-slide sky-slide" id="sky-1" data-duration="12000">
+      <div class="news-bg" id="sky-bg-1"></div><div class="news-overlay"></div>
+      <div class="news-inner">
+        <div class="news-logo-bar">
+          <img src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
+          <span class="news-time-ago" id="sky-ago-1"></span>
+        </div>
+        <div class="news-card">
+          <img class="news-thumb" id="sky-img-1" src="" alt="">
+          <div class="news-card-text">
+            <h2 id="sky-title-1">Loading...</h2>
+            <div class="news-desc-wrap" id="sky-wrap-1"><p id="sky-desc-1"></p></div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="slide news-slide tweakers-slide" id="tw-1" data-duration="10000">
-    <div class="news-bg" id="tw-bg-1"></div>
-    <div class="news-inner">
-      <div class="news-logo-bar">
-        <img src="https://static.cdnlogo.com/logos/t/79/tweakers.svg" alt="Tweakers" style="height:2.5vw;">
-        <span class="news-time-ago" id="tw-ago-1"></span>
-      </div>
-      <div class="news-card">
-        <img class="news-thumb" id="tw-img-1" src="" alt="">
-        <div class="news-card-text">
-          <h2 id="tw-title-1">Laden...</h2>
-          <div class="news-desc-wrap" id="tw-wrap-1"><p id="tw-desc-1"></p></div>
+
+    <!-- 11. GESCHIEDENIS -->
+    <div class="slide" data-duration="20000">
+      <iframe src="https://thomaz1200.github.io/Geschiedenis/" loading="lazy"></iframe>
+    </div>
+
+    <!-- 12-13. BRIGHT -->
+    <div class="slide news-slide bright-slide" id="bright-0" data-duration="12000">
+      <div class="news-bg" id="bright-bg-0"></div><div class="news-overlay"></div>
+      <div class="news-inner">
+        <div class="news-logo-bar">
+          <span class="bright-logo">bright</span>
+          <span class="news-time-ago" id="bright-ago-0"></span>
+        </div>
+        <div class="news-card">
+          <img class="news-thumb" id="bright-img-0" src="" alt="">
+          <div class="news-card-text">
+            <h2 id="bright-title-0">Laden...</h2>
+            <div class="news-desc-wrap" id="bright-wrap-0"><p id="bright-desc-0"></p></div>
+          </div>
         </div>
       </div>
     </div>
+    <div class="slide news-slide bright-slide" id="bright-1" data-duration="12000">
+      <div class="news-bg" id="bright-bg-1"></div><div class="news-overlay"></div>
+      <div class="news-inner">
+        <div class="news-logo-bar">
+          <span class="bright-logo">bright</span>
+          <span class="news-time-ago" id="bright-ago-1"></span>
+        </div>
+        <div class="news-card">
+          <img class="news-thumb" id="bright-img-1" src="" alt="">
+          <div class="news-card-text">
+            <h2 id="bright-title-1">Laden...</h2>
+            <div class="news-desc-wrap" id="bright-wrap-1"><p id="bright-desc-1"></p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /slideshow -->
+
+  <div id="ticker-bar">
+    <iframe src="https://thomaz1200.github.io/ticker/" loading="lazy"></iframe>
   </div>
-
-</div>
-
-<!-- ═══ TICKER ═══ -->
-<div id="ticker">
-  <iframe src="https://thomaz1200.github.io/ticker/" loading="lazy"></iframe>
-</div>
+</div><!-- /wrapper -->
 
 <script>
-// ══════════════════════════════════
-//  CLOCK
-// ══════════════════════════════════
+// ═══ CLOCK ═══
 function updateClock() {
   const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  const s = String(now.getSeconds()).padStart(2, '0');
-  document.getElementById('clock-time').textContent = h + ':' + m;
-  document.getElementById('clock-seconds').textContent = s;
+  document.getElementById('clock-time').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('clock-seconds').textContent = String(now.getSeconds()).padStart(2,'0');
   const days = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
   const months = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
   document.getElementById('clock-date').textContent =
@@ -566,9 +519,7 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
-// ══════════════════════════════════
-//  WEATHER
-// ══════════════════════════════════
+// ═══ WEATHER ═══
 const weatherIcons = {
   '113':'☀️','116':'⛅','119':'☁️','122':'☁️','143':'🌫️','176':'🌦️',
   '179':'🌨️','182':'🌨️','185':'🌨️','200':'⛈️','227':'🌨️','230':'❄️',
@@ -579,8 +530,6 @@ const weatherIcons = {
   '356':'🌧️','359':'🌧️','362':'🌨️','365':'🌨️','368':'🌨️','371':'❄️',
   '374':'🌨️','377':'🌨️','386':'⛈️','389':'⛈️','392':'⛈️','395':'❄️'
 };
-
-// Background photos per weather type (Unsplash)
 const weatherPhotos = {
   sunny:   'https://images.unsplash.com/photo-1601297183305-6df142704ea2?w=1920&q=80',
   cloudy:  'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1920&q=80',
@@ -590,10 +539,9 @@ const weatherPhotos = {
   foggy:   'https://images.unsplash.com/photo-1487621167305-5d248087c724?w=1920&q=80',
   default: 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1920&q=80'
 };
-
-function getWeatherCategory(code) {
+function getWeatherCat(code) {
   const c = parseInt(code);
-  if (c === 113) return 'sunny';
+  if (c===113) return 'sunny';
   if ([116,119,122].includes(c)) return 'cloudy';
   if ([143,248,260].includes(c)) return 'foggy';
   if ([176,263,266,293,296,299,302,305,308,353,356,359].includes(c)) return 'rainy';
@@ -604,44 +552,39 @@ function getWeatherCategory(code) {
 
 async function fetchWeather() {
   try {
-    const resp = await fetch('https://wttr.in/Zwolle?format=j1');
-    const data = await resp.json();
+    const data = await (await fetch('https://wttr.in/Zwolle?format=j1')).json();
     const cur = data.current_condition[0];
-    const code = cur.weatherCode;
-    const cat = getWeatherCategory(code);
-
+    const cat = getWeatherCat(cur.weatherCode);
     document.getElementById('weather-bg').style.backgroundImage = 'url(' + weatherPhotos[cat] + ')';
-    document.getElementById('w-icon').textContent = weatherIcons[code] || '🌤️';
+    document.getElementById('w-icon').textContent = weatherIcons[cur.weatherCode] || '🌤️';
     document.getElementById('w-temp').textContent = cur.temp_C + '°';
-    document.getElementById('w-desc').textContent = cur.lang_nl && cur.lang_nl[0] ? cur.lang_nl[0].value : cur.weatherDesc[0].value;
-    document.getElementById('w-feel').textContent = 'Gevoels: ' + cur.FeelsLikeC + '°';
-    document.getElementById('w-wind').textContent = 'Wind: ' + cur.windspeedKmph + ' km/h';
-    document.getElementById('w-hum').textContent = 'Luchtvochtigheid: ' + cur.humidity + '%';
-    document.getElementById('w-uv').textContent = 'UV: ' + cur.uvIndex;
+    document.getElementById('w-desc').textContent = cur.lang_nl?.[0]?.value || cur.weatherDesc[0].value;
+    document.getElementById('w-feel').textContent = cur.FeelsLikeC + '°';
+    document.getElementById('w-wind').textContent = cur.windspeedKmph + ' km/h';
+    document.getElementById('w-hum').textContent = cur.humidity + '%';
+    document.getElementById('w-uv').textContent = cur.uvIndex;
+    document.getElementById('w-vis').textContent = cur.visibility + ' km';
+    document.getElementById('w-pres').textContent = cur.pressure + ' hPa';
 
     // Hourly forecast
-    const hourlyContainer = document.getElementById('w-hourly');
-    hourlyContainer.innerHTML = '';
-    const now = new Date();
-    const currentHour = now.getHours();
-    const todayWeather = data.weather[0];
-    const tomorrowWeather = data.weather[1];
-    const allHours = [...(todayWeather ? todayWeather.hourly : []), ...(tomorrowWeather ? tomorrowWeather.hourly : [])];
+    const container = document.getElementById('w-hourly');
+    container.innerHTML = '';
+    const nowH = new Date().getHours();
+    const allHours = [...(data.weather[0]?.hourly||[]), ...(data.weather[1]?.hourly||[])];
+    const todayLen = data.weather[0]?.hourly?.length || 0;
     let shown = 0;
-    for (const h of allHours) {
+    for (let idx = 0; idx < allHours.length && shown < 8; idx++) {
+      const h = allHours[idx];
       const hTime = parseInt(h.time) / 100;
-      const isToday = allHours.indexOf(h) < (todayWeather ? todayWeather.hourly.length : 0);
-      if (isToday && hTime <= currentHour) continue;
-      if (shown >= 8) break;
+      if (idx < todayLen && hTime <= nowH) continue;
       const div = document.createElement('div');
       div.className = 'weather-hour';
-      const timeLabel = String(hTime).padStart(2,'0') + ':00';
       div.innerHTML =
-        '<span class="wh-time">' + timeLabel + '</span>' +
-        '<span class="wh-icon">' + (weatherIcons[h.weatherCode] || '🌤️') + '</span>' +
+        '<span class="wh-time">' + String(hTime).padStart(2,'0') + ':00</span>' +
+        '<span class="wh-icon">' + (weatherIcons[h.weatherCode]||'🌤️') + '</span>' +
         '<span class="wh-temp">' + h.tempC + '°</span>' +
-        '<span class="wh-rain">' + h.chanceofrain + '%</span>';
-      hourlyContainer.appendChild(div);
+        '<span class="wh-rain">💧' + h.chanceofrain + '%</span>';
+      container.appendChild(div);
       shown++;
     }
   } catch(e) {
@@ -651,117 +594,90 @@ async function fetchWeather() {
 fetchWeather();
 setInterval(fetchWeather, 600000);
 
-// ══════════════════════════════════
-//  TIME AGO helper
-// ══════════════════════════════════
+// ═══ TIME AGO ═══
 function timeAgo(dateStr) {
-  const published = new Date(dateStr);
-  const now = new Date();
-  const diff = Math.floor((now - published) / 1000);
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
   if (diff < 60) return 'Zojuist';
-  if (diff < 3600) return Math.floor(diff / 60) + ' min geleden';
-  if (diff < 86400) return Math.floor(diff / 3600) + ' uur geleden';
-  return Math.floor(diff / 86400) + ' dagen geleden';
+  if (diff < 3600) return Math.floor(diff/60) + ' min geleden';
+  if (diff < 86400) return Math.floor(diff/3600) + ' uur geleden';
+  return Math.floor(diff/86400) + ' dag(en) geleden';
 }
 
-// ══════════════════════════════════
-//  NEWS FETCHER
-// ══════════════════════════════════
+// ═══ NEWS ═══
 const RSS_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
-const PLACEHOLDER_IMG = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect fill="#1a1a1a" width="800" height="600"/><text x="400" y="300" fill="#333" text-anchor="middle" font-family="sans-serif" font-size="24">Geen afbeelding</text></svg>');
-
-function setupAutoScroll(wrapId) {
-  const wrap = document.getElementById(wrapId);
-  if (!wrap) return;
-  const p = wrap.querySelector('p');
-  if (!p) return;
-  // Reset first
-  wrap.classList.remove('scrolling');
-  p.style.animation = 'none';
-  // Wait a frame then check overflow
-  requestAnimationFrame(() => {
-    const overflow = p.scrollHeight - wrap.clientHeight;
-    if (overflow > 10) {
-      const duration = Math.max(4, overflow / 30);
-      wrap.style.setProperty('--scroll-distance', '-' + overflow + 'px');
-      wrap.style.setProperty('--scroll-duration', duration + 's');
-      wrap.classList.add('scrolling');
-    }
-  });
-}
+const PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect fill="#1a1a1a" width="800" height="600"/></svg>'
+);
 
 async function fetchNews(feedUrl, prefix, count) {
   try {
-    const resp = await fetch(RSS_API + encodeURIComponent(feedUrl));
-    const data = await resp.json();
-    if (!data.items || !data.items.length) return;
-    const items = data.items.slice(0, count);
-    items.forEach((item, i) => {
-      const titleEl = document.getElementById(prefix + '-title-' + i);
-      const descEl = document.getElementById(prefix + '-desc-' + i);
-      const imgEl = document.getElementById(prefix + '-img-' + i);
-      const agoEl = document.getElementById(prefix + '-ago-' + i);
-      const bgEl = document.getElementById(prefix + '-bg-' + i);
-
+    const data = await (await fetch(RSS_API + encodeURIComponent(feedUrl))).json();
+    if (!data.items?.length) return;
+    data.items.slice(0, count).forEach((item, i) => {
+      const el = (id) => document.getElementById(prefix + '-' + id + '-' + i);
+      const titleEl = el('title'), descEl = el('desc'), imgEl = el('img'),
+            agoEl = el('ago'), bgEl = el('bg');
       if (titleEl) titleEl.textContent = item.title;
-      if (agoEl) {
-        agoEl.textContent = timeAgo(item.pubDate);
-        agoEl.dataset.pubdate = item.pubDate;
-      }
-
+      if (agoEl) { agoEl.textContent = timeAgo(item.pubDate); agoEl.dataset.pubdate = item.pubDate; }
       if (descEl) {
         const tmp = document.createElement('div');
         tmp.innerHTML = item.description;
         descEl.textContent = tmp.textContent || tmp.innerText || '';
       }
-
-      let imgSrc = item.thumbnail || item.enclosure?.link || '';
-      if (!imgSrc) {
-        const m = item.description.match(/<img[^>]+src="([^"]+)"/);
-        imgSrc = m ? m[1] : PLACEHOLDER_IMG;
+      let src = item.thumbnail || item.enclosure?.link || '';
+      if (!src) {
+        const m = item.description?.match(/<img[^>]+src="([^"]+)"/);
+        src = m ? m[1] : PLACEHOLDER;
       }
-      if (imgEl) imgEl.src = imgSrc;
-      if (bgEl) bgEl.style.backgroundImage = 'url(' + imgSrc + ')';
+      if (imgEl) imgEl.src = src;
+      if (bgEl) bgEl.style.backgroundImage = 'url(' + src + ')';
     });
-  } catch(e) {
-    console.error('News fetch error for ' + prefix + ':', e);
-  }
+  } catch(e) { console.warn('News error (' + prefix + '):', e); }
 }
 
 function loadAllNews() {
   fetchNews('https://feeds.nos.nl/nosnieuwsalgemeen', 'nos', 2);
   fetchNews('https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml', 'nyt', 2);
   fetchNews('https://feeds.skynews.com/feeds/rss/home.xml', 'sky', 2);
-  fetchNews('https://tweakers.net/feeds/mixed.xml', 'tw', 2);
+  fetchNews('https://www.bright.nl/rss', 'bright', 2);
 }
 loadAllNews();
 setInterval(loadAllNews, 300000);
 
-// ══════════════════════════════════
-//  SLIDESHOW
-// ══════════════════════════════════
+// ═══ AUTO-SCROLL — slow & graceful ═══
+function startAutoScroll(slideEl) {
+  const wrap = slideEl.querySelector('.news-desc-wrap');
+  if (!wrap) return;
+  const p = wrap.querySelector('p');
+  if (!p) return;
+  p.style.transition = 'none';
+  p.style.transform = 'translateY(0)';
+  void p.offsetHeight;
+  const overflow = p.scrollHeight - wrap.clientHeight;
+  if (overflow > 20) {
+    // Slow scroll: ~30px per second, starts after 3s
+    const duration = overflow / 30;
+    setTimeout(() => {
+      p.style.transition = 'transform ' + duration + 's linear';
+      p.style.transform = 'translateY(-' + overflow + 'px)';
+    }, 3000);
+  }
+}
+
+// ═══ SLIDESHOW ═══
 const slides = document.querySelectorAll('.slide');
-let currentSlide = 0;
-let progressTimer = null;
+let currentSlide = 0, progressTimer = null;
 const progressBar = document.getElementById('progress-bar');
 
 function showSlide(index) {
   slides.forEach(s => s.classList.remove('active'));
   slides[index].classList.add('active');
   currentSlide = index;
-
-  // Setup auto-scroll for news slides
   const slideEl = slides[index];
-  const wrapEl = slideEl.querySelector('.news-desc-wrap');
-  if (wrapEl) setupAutoScroll(wrapEl.id);
-
-  // Update time-ago for visible news
+  startAutoScroll(slideEl);
   const agoEl = slideEl.querySelector('.news-time-ago');
-  if (agoEl && agoEl.dataset.pubdate) {
-    agoEl.textContent = timeAgo(agoEl.dataset.pubdate);
-  }
-
-  const duration = parseInt(slides[index].dataset.duration) || 15000;
+  if (agoEl?.dataset.pubdate) agoEl.textContent = timeAgo(agoEl.dataset.pubdate);
+  const duration = parseInt(slideEl.dataset.duration) || 15000;
   progressBar.style.transition = 'none';
   progressBar.style.width = '0%';
   requestAnimationFrame(() => {
@@ -770,13 +686,9 @@ function showSlide(index) {
       progressBar.style.width = '100%';
     });
   });
-
   clearTimeout(progressTimer);
-  progressTimer = setTimeout(() => {
-    showSlide((currentSlide + 1) % slides.length);
-  }, duration);
+  progressTimer = setTimeout(() => showSlide((currentSlide + 1) % slides.length), duration);
 }
-
 showSlide(0);
 </script>
 </body>
