@@ -2,694 +2,529 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Digital Signage</title>
+<meta name="viewport" content="width=1920">
+<title>Spoor Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #0a0e17;
+  color: #e4e6eb;
+  font-family: 'Outfit', sans-serif;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
 
-  html { height: 100%; }
-  body {
-    font-family: 'Inter', sans-serif;
-    background: #000;
-    color: #fff;
-    height: 100%;
-    overflow: hidden;
-  }
+.dashboard {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 32px;
+  padding: 48px 48px 40px;
+  height: 100%;
+}
 
-  /* ═══ ROCK-SOLID LAYOUT ═══
-     Wrapper is 100vh, split into slideshow + ticker.
-     Nothing can overlap. */
-  #wrapper {
-    display: flex;
-    flex-direction: column;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-  }
-  #slideshow {
-    flex: 1 1 0;
-    min-height: 0;
-    position: relative;
-    overflow: hidden;
-  }
-  #ticker-bar {
-    flex: 0 0 52px;
-    height: 52px;
-    max-height: 52px;
-    width: 100%;
-    overflow: hidden;
-    background: #0a0a0a;
-    border-top: 2px solid rgba(255,255,255,0.08);
-  }
-  #ticker-bar iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
-  }
+.column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 
-  /* ═══ SLIDES ═══ */
-  .slide {
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    transition: opacity 1.4s cubic-bezier(0.4, 0, 0.2, 1);
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
-  .slide.active { opacity: 1; pointer-events: auto; z-index: 2; }
-  .slide iframe { width: 100%; height: 100%; border: none; background: #0a0a0a; }
+.column-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  position: relative;
+}
 
-  /* ═══ PROGRESS BAR ═══ */
-  #progress-bar {
-    position: absolute; top: 0; left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
-    background-size: 300% 100%;
-    animation: shimmer 3s linear infinite;
-    z-index: 50;
-  }
-  @keyframes shimmer { 0%{background-position:0% 0} 100%{background-position:300% 0} }
+.column-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  border-radius: 2px;
+}
 
-  /* ═══════════════════════════════════
-     1. CLOCK — Zwolle luchtfoto
-     ═══════════════════════════════════ */
-  #slide-clock { flex-direction: column; background: #000; }
-  #slide-clock .bg {
-    position: absolute; inset: 0;
-    /* Uses local zwolle.jpg, falls back to wikimedia */
-    background-image: url('zwolle.jpg'), url('https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Zwolle_Skyline_Rodetorenplein_04.JPG/1280px-Zwolle_Skyline_Rodetorenplein_04.JPG');
-    background-size: cover;
-    background-position: center 40%;
-    filter: brightness(0.32) saturate(1.3);
-  }
-  #slide-clock .overlay {
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.55) 100%),
-      linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.4) 100%);
-  }
-  #slide-clock .content {
-    position: relative; z-index: 2;
-    display: flex; flex-direction: column; align-items: center;
-  }
-  #clock-time {
-    font-size: 18vw; font-weight: 900; letter-spacing: -0.04em;
-    color: #fff;
-    text-shadow: 0 0 150px rgba(102,126,234,0.35), 0 0 60px rgba(118,75,162,0.25), 0 6px 40px rgba(0,0,0,0.9);
-    line-height: 1;
-  }
-  #clock-seconds {
-    font-size: 3vw; font-weight: 300;
-    color: rgba(255,255,255,0.25);
-    letter-spacing: 0.8em;
-    margin-top: 0.3vw;
-  }
-  #clock-date {
-    font-size: 2.2vw; font-weight: 300;
-    color: rgba(255,255,255,0.6);
-    margin-top: 2vw;
-    text-transform: capitalize;
-    text-shadow: 0 2px 20px rgba(0,0,0,0.7);
-    letter-spacing: 0.08em;
-  }
-  #clock-location {
-    font-size: 0.85vw; font-weight: 600;
-    color: rgba(255,255,255,0.2);
-    letter-spacing: 0.8em;
-    text-transform: uppercase;
-    margin-top: 2.5vw;
-    padding: 0.5vw 2.5vw;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 100px;
-    backdrop-filter: blur(10px);
-    background: rgba(255,255,255,0.03);
-  }
+.column--storingen .column-header::after { background: #ef4444; }
+.column--werkzaamheden .column-header::after { background: #f59e0b; }
+.column--nieuws .column-header::after { background: #3b82f6; }
 
-  /* ═══════════════════════════════════
-     2. WEATHER — uitgebreid
-     ═══════════════════════════════════ */
-  #slide-weather { flex-direction: column; background: #000; }
-  #slide-weather .weather-bg {
-    position: absolute; inset: 0;
-    background-size: cover; background-position: center;
-    filter: brightness(0.28) saturate(1.5);
-    transition: background-image 1.5s ease;
-  }
-  #slide-weather .weather-overlay {
-    position: absolute; inset: 0;
-    background:
-      linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.5) 100%),
-      radial-gradient(ellipse at 30% 40%, rgba(100,130,255,0.06), transparent 60%);
-  }
-  .weather-content {
-    position: relative; z-index: 2;
-    display: flex; flex-direction: column; align-items: center;
-    width: 100%; height: 100%;
-    justify-content: center; padding: 2vw;
-  }
-  .weather-city {
-    font-size: 1vw; font-weight: 600;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 0.7em; text-transform: uppercase;
-    margin-bottom: 1.5vw;
-    padding: 0.4vw 2vw;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 100px;
-    backdrop-filter: blur(10px);
-    background: rgba(255,255,255,0.03);
-  }
-  .weather-main { display: flex; align-items: center; gap: 2vw; margin-bottom: 0.5vw; }
-  .weather-icon { font-size: 9vw; line-height: 1; filter: drop-shadow(0 0 40px rgba(255,255,255,0.1)); }
-  .weather-temp-block { text-align: center; }
-  .weather-temp {
-    font-size: 12vw; font-weight: 900; color: #fff; line-height: 1;
-    text-shadow: 0 0 80px rgba(255,255,255,0.08);
-  }
-  .weather-desc {
-    font-size: 2.2vw; font-weight: 400;
-    color: rgba(255,255,255,0.6);
-    text-transform: capitalize; margin-top: 0.3vw;
-  }
-  .weather-stats {
-    display: flex; gap: 1.2vw;
-    margin: 2vw 0 1.5vw;
-  }
-  .weather-stat {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 0.7vw 1.4vw;
-    background: rgba(255,255,255,0.05);
-    border-radius: 14px;
-    border: 1px solid rgba(255,255,255,0.06);
-    min-width: 7vw;
-  }
-  .weather-stat .ws-label {
-    font-size: 0.7vw; font-weight: 600;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 0.1em; text-transform: uppercase;
-    margin-bottom: 0.3vw;
-  }
-  .weather-stat .ws-val {
-    font-size: 1.2vw; font-weight: 700;
-    color: rgba(255,255,255,0.8);
-  }
-  .weather-hourly {
-    display: flex; gap: 0; margin-top: 0.8vw;
-    background: rgba(255,255,255,0.04);
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.06);
-    overflow: hidden;
-  }
-  .weather-hour {
-    display: flex; flex-direction: column; align-items: center;
-    gap: 0.3vw; padding: 0.8vw 1.4vw;
-    border-right: 1px solid rgba(255,255,255,0.04);
-  }
-  .weather-hour:last-child { border-right: none; }
-  .weather-hour .wh-time { font-size: 0.8vw; color: rgba(255,255,255,0.3); font-weight: 600; }
-  .weather-hour .wh-icon { font-size: 1.6vw; }
-  .weather-hour .wh-temp { font-size: 1vw; font-weight: 700; color: rgba(255,255,255,0.85); }
-  .weather-hour .wh-rain { font-size: 0.65vw; color: #5bc0f8; font-weight: 500; }
+.column-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
 
-  /* ═══════════════════════════════════
-     NEWS SLIDES
-     ═══════════════════════════════════ */
-  .news-slide { padding: 0; overflow: hidden; }
-  .news-slide .news-bg {
-    position: absolute; inset: -60px;
-    background-size: cover; background-position: center;
-    filter: blur(60px) brightness(0.18) saturate(2);
-  }
-  .news-slide .news-overlay {
-    position: absolute; inset: 0;
-    background: linear-gradient(135deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.65) 100%);
-  }
-  .news-slide .news-inner {
-    position: relative; z-index: 2;
-    display: flex; flex-direction: column;
-    width: 100%; height: 100%;
-    padding: 2.5vw 4vw 2vw;
-  }
-  .news-logo-bar {
-    display: flex; align-items: center; gap: 1vw;
-    margin-bottom: 1.5vw; flex-shrink: 0;
-  }
-  .news-logo-bar img { height: 2.8vw; object-fit: contain; }
-  .news-logo-bar .news-time-ago {
-    margin-left: auto;
-    font-size: 0.9vw; color: rgba(255,255,255,0.35); font-weight: 500;
-    padding: 0.3vw 1vw;
-    background: rgba(255,255,255,0.06);
-    border-radius: 100px;
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  .news-card {
-    display: flex; gap: 3vw;
-    flex: 1; min-height: 0; width: 100%;
-  }
-  .news-card img.news-thumb {
-    width: 42%; height: 100%;
-    object-fit: cover; border-radius: 20px; flex-shrink: 0;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
-  }
-  .news-card-text {
-    flex: 1; display: flex; flex-direction: column;
-    justify-content: center;
-    min-height: 0; overflow: hidden; padding-right: 1vw;
-  }
-  .news-card-text h2 {
-    font-size: 2.6vw; font-weight: 700;
-    line-height: 1.25; margin-bottom: 1.5vw;
-    color: #fff; flex-shrink: 0;
-  }
-  .news-card-text .news-desc-wrap {
-    flex: 1; min-height: 0;
-    overflow: hidden; position: relative;
-  }
-  .news-card-text .news-desc-wrap::after {
-    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-    height: 5vw;
-    background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.85));
-    pointer-events: none; z-index: 3;
-  }
-  .news-card-text .news-desc-wrap p {
-    font-size: 1.4vw; line-height: 1.75;
-    color: rgba(255,255,255,0.5); position: relative;
-  }
+.column--storingen .column-icon { background: rgba(239,68,68,0.15); color: #ef4444; }
+.column--werkzaamheden .column-icon { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.column--nieuws .column-icon { background: rgba(59,130,246,0.15); color: #3b82f6; }
 
-  /* Source accents */
-  .nos-slide { background: #0d0808; }
-  .nos-slide .news-card-text h2 { color: #ffcfaa; }
-  .nos-slide .news-logo-bar img { filter: none; }
+.column-icon svg { width: 20px; height: 20px; }
 
-  .nyt-slide { background: #0d0d0d; }
-  .nyt-slide .news-card-text h2 { color: #e8e8e8; }
-  .nyt-slide .news-logo-bar img { filter: invert(1); height: 2vw; }
+.column-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
 
-  .sky-slide { background: #080d18; }
-  .sky-slide .news-card-text h2 { color: #c8d8f0; }
-  .sky-slide .news-logo-bar img { filter: none; }
+.column-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+  font-weight: 400;
+}
 
-  .bright-slide { background: #0d0a08; }
-  .bright-slide .news-card-text h2 { color: #ffd699; }
-  .bright-logo {
-    font-size: 2.5vw; font-weight: 900;
-    color: #f90; letter-spacing: -0.03em; text-transform: lowercase;
-  }
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 18px 20px;
+  transition: background 0.2s;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #f3f4f6;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.card-description {
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.card-meta-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #4b5563;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.badge--storing {
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+}
+
+.badge--werkzaamheid {
+  background: rgba(245,158,11,0.12);
+  color: #fbbf24;
+}
+
+.badge--bron {
+  background: rgba(59,130,246,0.1);
+  color: #60a5fa;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  color: #6b7280;
+  flex: 1;
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.empty-state-icon--ok {
+  background: rgba(34,197,94,0.12);
+  color: #22c55e;
+}
+
+.empty-state-icon--neutral {
+  background: rgba(107,114,128,0.15);
+  color: #9ca3af;
+}
+
+.empty-state-icon svg { width: 24px; height: 24px; }
+
+.empty-state-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-top-color: #6b7280;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 10px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.update-time {
+  position: fixed;
+  bottom: 16px;
+  right: 24px;
+  font-size: 11px;
+  color: #4b5563;
+}
 </style>
 </head>
 <body>
+<div class="dashboard">
 
-<div id="wrapper">
-  <div id="slideshow">
-    <div id="progress-bar"></div>
-
-    <!-- 1. KLOK -->
-    <div class="slide active" id="slide-clock" data-duration="12000">
-      <div class="bg"></div>
-      <div class="overlay"></div>
-      <div class="content">
-        <div id="clock-time">00:00</div>
-        <div id="clock-seconds">00</div>
-        <div id="clock-date"></div>
-        <div id="clock-location">Zwolle, Overijssel</div>
+  <div class="column column--storingen">
+    <div class="column-header">
+      <div class="column-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
       </div>
+      <div class="column-title">Actuele storingen</div>
+      <div class="column-subtitle">Verstoringen op het spoor</div>
     </div>
-
-    <!-- 2. WEER -->
-    <div class="slide" id="slide-weather" data-duration="15000">
-      <div class="weather-bg" id="weather-bg"></div>
-      <div class="weather-overlay"></div>
-      <div class="weather-content">
-        <div class="weather-city">Zwolle</div>
-        <div class="weather-main">
-          <div class="weather-icon" id="w-icon"></div>
-          <div class="weather-temp-block">
-            <div class="weather-temp" id="w-temp">--°</div>
-            <div class="weather-desc" id="w-desc">Laden...</div>
-          </div>
-        </div>
-        <div class="weather-stats" id="w-stats">
-          <div class="weather-stat"><span class="ws-label">Gevoels</span><span class="ws-val" id="w-feel">--°</span></div>
-          <div class="weather-stat"><span class="ws-label">Wind</span><span class="ws-val" id="w-wind">--</span></div>
-          <div class="weather-stat"><span class="ws-label">Vochtigheid</span><span class="ws-val" id="w-hum">--%</span></div>
-          <div class="weather-stat"><span class="ws-label">UV-index</span><span class="ws-val" id="w-uv">--</span></div>
-          <div class="weather-stat"><span class="ws-label">Zicht</span><span class="ws-val" id="w-vis">--</span></div>
-          <div class="weather-stat"><span class="ws-label">Luchtdruk</span><span class="ws-val" id="w-pres">--</span></div>
-        </div>
-        <div class="weather-hourly" id="w-hourly"></div>
-      </div>
+    <div class="card-list" id="storingen-list">
+      <div class="loading"><div class="loading-spinner"></div>Laden...</div>
     </div>
-
-    <!-- 3. TREINEN -->
-    <div class="slide" data-duration="20000">
-      <iframe src="https://www.rijdendetreinen.nl/vertrektijden/station/zwolle?style=tb&time=alternate&lang=nl" loading="lazy"></iframe>
-    </div>
-
-    <!-- 4. BUS -->
-    <div class="slide" data-duration="20000">
-      <iframe src="https://drgl.nl/stop/NL:S:46004007" loading="lazy"></iframe>
-    </div>
-
-    <!-- 5-6. NOS -->
-    <div class="slide news-slide nos-slide" id="nos-0" data-duration="12000">
-      <div class="news-bg" id="nos-bg-0"></div><div class="news-overlay"></div>
-      <div class="news-inner">
-        <div class="news-logo-bar">
-          <img src="https://static.cdnlogo.com/logos/n/78/nos.svg" alt="NOS">
-          <span class="news-time-ago" id="nos-ago-0"></span>
-        </div>
-        <div class="news-card">
-          <img class="news-thumb" id="nos-img-0" src="" alt="">
-          <div class="news-card-text">
-            <h2 id="nos-title-0">Laden...</h2>
-            <div class="news-desc-wrap" id="nos-wrap-0"><p id="nos-desc-0"></p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="slide news-slide nos-slide" id="nos-1" data-duration="12000">
-      <div class="news-bg" id="nos-bg-1"></div><div class="news-overlay"></div>
-      <div class="news-inner">
-        <div class="news-logo-bar">
-          <img src="https://static.cdnlogo.com/logos/n/78/nos.svg" alt="NOS">
-          <span class="news-time-ago" id="nos-ago-1"></span>
-        </div>
-        <div class="news-card">
-          <img class="news-thumb" id="nos-img-1" src="" alt="">
-          <div class="news-card-text">
-            <h2 id="nos-title-1">Laden...</h2>
-            <div class="news-desc-wrap" id="nos-wrap-1"><p id="nos-desc-1"></p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 7-8. NYT -->
-    <div class="slide news-slide nyt-slide" id="nyt-0" data-duration="12000">
-      <div class="news-bg" id="nyt-bg-0"></div><div class="news-overlay"></div>
-      <div class="news-inner">
-        <div class="news-logo-bar">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/7/77/The_New_York_Times_logo.png" alt="NYT">
-          <span class="news-time-ago" id="nyt-ago-0"></span>
-        </div>
-        <div class="news-card">
-          <img class="news-thumb" id="nyt-img-0" src="" alt="">
-          <div class="news-card-text">
-            <h2 id="nyt-title-0">Loading...</h2>
-            <div class="news-desc-wrap" id="nyt-wrap-0"><p id="nyt-desc-0"></p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="slide news-slide nyt-slide" id="nyt-1" data-duration="12000">
-      <div class="news-bg" id="nyt-bg-1"></div><div class="news-overlay"></div>
-      <div class="news-inner">
-        <div class="news-logo-bar">
-          <img src="https://upload.wikimedia.org/wikipedia/commons/7/77/The_New_York_Times_logo.png" alt="NYT">
-          <span class="news-time-ago" id="nyt-ago-1"></span>
-        </div>
-        <div class="news-card">
-          <img class="news-thumb" id="nyt-img-1" src="" alt="">
-          <div class="news-card-text">
-            <h2 id="nyt-title-1">Loading...</h2>
-            <div class="news-desc-wrap" id="nyt-wrap-1"><p id="nyt-desc-1"></p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 9-10. SKY NEWS -->
-    <div class="slide news-slide sky-slide" id="sky-0" data-duration="12000">
-      <div class="news-bg" id="sky-bg-0"></div><div class="news-overlay"></div>
-      <div class="news-inner">
-        <div class="news-logo-bar">
-          <img src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
-          <span class="news-time-ago" id="sky-ago-0"></span>
-        </div>
-        <div class="news-card">
-          <img class="news-thumb" id="sky-img-0" src="" alt="">
-          <div class="news-card-text">
-            <h2 id="sky-title-0">Loading...</h2>
-            <div class="news-desc-wrap" id="sky-wrap-0"><p id="sky-desc-0"></p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="slide news-slide sky-slide" id="sky-1" data-duration="12000">
-      <div class="news-bg" id="sky-bg-1"></div><div class="news-overlay"></div>
-      <div class="news-inner">
-        <div class="news-logo-bar">
-          <img src="https://static.cdnlogo.com/logos/s/65/sky-news.svg" alt="Sky News">
-          <span class="news-time-ago" id="sky-ago-1"></span>
-        </div>
-        <div class="news-card">
-          <img class="news-thumb" id="sky-img-1" src="" alt="">
-          <div class="news-card-text">
-            <h2 id="sky-title-1">Loading...</h2>
-            <div class="news-desc-wrap" id="sky-wrap-1"><p id="sky-desc-1"></p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 11. GESCHIEDENIS -->
-    <div class="slide" data-duration="20000">
-      <iframe src="https://thomaz1200.github.io/Geschiedenis/" loading="lazy"></iframe>
-    </div>
-
-    <!-- 12-13. BRIGHT -->
-    <div class="slide news-slide bright-slide" id="bright-0" data-duration="12000">
-      <div class="news-bg" id="bright-bg-0"></div><div class="news-overlay"></div>
-      <div class="news-inner">
-        <div class="news-logo-bar">
-          <span class="bright-logo">bright</span>
-          <span class="news-time-ago" id="bright-ago-0"></span>
-        </div>
-        <div class="news-card">
-          <img class="news-thumb" id="bright-img-0" src="" alt="">
-          <div class="news-card-text">
-            <h2 id="bright-title-0">Laden...</h2>
-            <div class="news-desc-wrap" id="bright-wrap-0"><p id="bright-desc-0"></p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="slide news-slide bright-slide" id="bright-1" data-duration="12000">
-      <div class="news-bg" id="bright-bg-1"></div><div class="news-overlay"></div>
-      <div class="news-inner">
-        <div class="news-logo-bar">
-          <span class="bright-logo">bright</span>
-          <span class="news-time-ago" id="bright-ago-1"></span>
-        </div>
-        <div class="news-card">
-          <img class="news-thumb" id="bright-img-1" src="" alt="">
-          <div class="news-card-text">
-            <h2 id="bright-title-1">Laden...</h2>
-            <div class="news-desc-wrap" id="bright-wrap-1"><p id="bright-desc-1"></p></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /slideshow -->
-
-  <div id="ticker-bar">
-    <iframe src="https://thomaz1200.github.io/ticker/" loading="lazy"></iframe>
   </div>
-</div><!-- /wrapper -->
+
+  <div class="column column--werkzaamheden">
+    <div class="column-header">
+      <div class="column-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
+        </svg>
+      </div>
+      <div class="column-title">Werkzaamheden</div>
+      <div class="column-subtitle">Gepland onderhoud</div>
+    </div>
+    <div class="card-list" id="werkzaamheden-list">
+      <div class="loading"><div class="loading-spinner"></div>Laden...</div>
+    </div>
+  </div>
+
+  <div class="column column--nieuws">
+    <div class="column-header">
+      <div class="column-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/>
+          <path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6z"/>
+        </svg>
+      </div>
+      <div class="column-title">Spoornieuws</div>
+      <div class="column-subtitle">Laatste berichten</div>
+    </div>
+    <div class="card-list" id="nieuws-list">
+      <div class="loading"><div class="loading-spinner"></div>Laden...</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="update-time" id="update-time"></div>
 
 <script>
-// ═══ CLOCK ═══
-function updateClock() {
-  const now = new Date();
-  document.getElementById('clock-time').textContent =
-    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-  document.getElementById('clock-seconds').textContent = String(now.getSeconds()).padStart(2,'0');
-  const days = ['zondag','maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag'];
-  const months = ['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
-  document.getElementById('clock-date').textContent =
-    days[now.getDay()] + ' ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
-}
-setInterval(updateClock, 1000);
-updateClock();
+var NS_API_BASE = 'https://gateway.apiportal.ns.nl/reisinformatie-api/api/v3/disruptions';
+var NS_API_KEY = 'ee26abae888b455e94bd6e22915603de';
+var PROXY = 'https://api.allorigins.win/raw?url=';
 
-// ═══ WEATHER ═══
-const weatherIcons = {
-  '113':'☀️','116':'⛅','119':'☁️','122':'☁️','143':'🌫️','176':'🌦️',
-  '179':'🌨️','182':'🌨️','185':'🌨️','200':'⛈️','227':'🌨️','230':'❄️',
-  '248':'🌫️','260':'🌫️','263':'🌦️','266':'🌧️','281':'🌨️','284':'🌨️',
-  '293':'🌦️','296':'🌧️','299':'🌧️','302':'🌧️','305':'🌧️','308':'🌧️',
-  '311':'🌨️','314':'🌨️','317':'🌨️','320':'🌨️','323':'🌨️','326':'🌨️',
-  '329':'❄️','332':'❄️','335':'❄️','338':'❄️','350':'🌨️','353':'🌦️',
-  '356':'🌧️','359':'🌧️','362':'🌨️','365':'🌨️','368':'🌨️','371':'❄️',
-  '374':'🌨️','377':'🌨️','386':'⛈️','389':'⛈️','392':'⛈️','395':'❄️'
-};
-const weatherPhotos = {
-  sunny:   'https://images.unsplash.com/photo-1601297183305-6df142704ea2?w=1920&q=80',
-  cloudy:  'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1920&q=80',
-  rainy:   'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?w=1920&q=80',
-  stormy:  'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?w=1920&q=80',
-  snowy:   'https://images.unsplash.com/photo-1491002052546-bf38f186af56?w=1920&q=80',
-  foggy:   'https://images.unsplash.com/photo-1487621167305-5d248087c724?w=1920&q=80',
-  default: 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=1920&q=80'
-};
-function getWeatherCat(code) {
-  const c = parseInt(code);
-  if (c===113) return 'sunny';
-  if ([116,119,122].includes(c)) return 'cloudy';
-  if ([143,248,260].includes(c)) return 'foggy';
-  if ([176,263,266,293,296,299,302,305,308,353,356,359].includes(c)) return 'rainy';
-  if ([200,386,389,392].includes(c)) return 'stormy';
-  if ([179,182,185,227,230,281,284,311,314,317,320,323,326,329,332,335,338,350,362,365,368,371,374,377,395].includes(c)) return 'snowy';
-  return 'default';
+var RSS_FEEDS = [
+  { url: 'https://www.treinenweb.nl/rss.xml', bron: 'Treinenweb' },
+  { url: 'https://www.treinreiziger.nl/feed/', bron: 'Treinreiziger' },
+  { url: 'https://www.ovnieuws.nl/feed/', bron: 'OVNieuws' },
+  { url: 'https://www.spoorpro.nl/feed/', bron: 'Spoorpro' }
+];
+
+function timeAgo(date) {
+  var now = new Date();
+  var diff = Math.floor((now - date) / 1000);
+  if (diff < 60) return 'zojuist';
+  if (diff < 3600) return Math.floor(diff / 60) + ' min geleden';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' uur geleden';
+  if (diff < 172800) return 'gisteren';
+  return Math.floor(diff / 86400) + ' dagen geleden';
 }
 
-async function fetchWeather() {
-  try {
-    const data = await (await fetch('https://wttr.in/Zwolle?format=j1')).json();
-    const cur = data.current_condition[0];
-    const cat = getWeatherCat(cur.weatherCode);
-    document.getElementById('weather-bg').style.backgroundImage = 'url(' + weatherPhotos[cat] + ')';
-    document.getElementById('w-icon').textContent = weatherIcons[cur.weatherCode] || '🌤️';
-    document.getElementById('w-temp').textContent = cur.temp_C + '°';
-    document.getElementById('w-desc').textContent = cur.lang_nl?.[0]?.value || cur.weatherDesc[0].value;
-    document.getElementById('w-feel').textContent = cur.FeelsLikeC + '°';
-    document.getElementById('w-wind').textContent = cur.windspeedKmph + ' km/h';
-    document.getElementById('w-hum').textContent = cur.humidity + '%';
-    document.getElementById('w-uv').textContent = cur.uvIndex;
-    document.getElementById('w-vis').textContent = cur.visibility + ' km';
-    document.getElementById('w-pres').textContent = cur.pressure + ' hPa';
+function escapeHtml(str) {
+  var el = document.createElement('span');
+  el.textContent = str || '';
+  return el.innerHTML;
+}
 
-    // Hourly forecast
-    const container = document.getElementById('w-hourly');
-    container.innerHTML = '';
-    const nowH = new Date().getHours();
-    const allHours = [...(data.weather[0]?.hourly||[]), ...(data.weather[1]?.hourly||[])];
-    const todayLen = data.weather[0]?.hourly?.length || 0;
-    let shown = 0;
-    for (let idx = 0; idx < allHours.length && shown < 8; idx++) {
-      const h = allHours[idx];
-      const hTime = parseInt(h.time) / 100;
-      if (idx < todayLen && hTime <= nowH) continue;
-      const div = document.createElement('div');
-      div.className = 'weather-hour';
-      div.innerHTML =
-        '<span class="wh-time">' + String(hTime).padStart(2,'0') + ':00</span>' +
-        '<span class="wh-icon">' + (weatherIcons[h.weatherCode]||'🌤️') + '</span>' +
-        '<span class="wh-temp">' + h.tempC + '°</span>' +
-        '<span class="wh-rain">💧' + h.chanceofrain + '%</span>';
-      container.appendChild(div);
-      shown++;
+function truncate(str, len) {
+  if (!str) return '';
+  str = str.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  return str.length > len ? str.substring(0, len) + '...' : str;
+}
+
+function formatDateRange(start, end) {
+  var opts = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+  var s = '';
+  if (start) {
+    var d = new Date(start);
+    s = d.toLocaleDateString('nl-NL', opts);
+  }
+  if (end) {
+    var e = new Date(end);
+    s += ' t/m ' + e.toLocaleDateString('nl-NL', opts);
+  }
+  return s;
+}
+
+function updateTimestamp() {
+  var now = new Date();
+  var t = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('update-time').textContent = 'Laatst bijgewerkt: ' + t;
+}
+
+function renderStoringen(data) {
+  var container = document.getElementById('storingen-list');
+  var items = [];
+
+  if (Array.isArray(data)) {
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].type === 'STORING' || data[i].type === 'CALAMITY') {
+        items.push(data[i]);
+      }
     }
-  } catch(e) {
-    document.getElementById('w-desc').textContent = 'Weer kon niet worden geladen';
   }
-}
-fetchWeather();
-setInterval(fetchWeather, 600000);
 
-// ═══ TIME AGO ═══
-function timeAgo(dateStr) {
-  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (diff < 60) return 'Zojuist';
-  if (diff < 3600) return Math.floor(diff/60) + ' min geleden';
-  if (diff < 86400) return Math.floor(diff/3600) + ' uur geleden';
-  return Math.floor(diff/86400) + ' dag(en) geleden';
-}
-
-// ═══ NEWS ═══
-const RSS_API = 'https://api.rss2json.com/v1/api.json?rss_url=';
-const PLACEHOLDER = 'data:image/svg+xml,' + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect fill="#1a1a1a" width="800" height="600"/></svg>'
-);
-
-async function fetchNews(feedUrl, prefix, count) {
-  try {
-    const data = await (await fetch(RSS_API + encodeURIComponent(feedUrl))).json();
-    if (!data.items?.length) return;
-    data.items.slice(0, count).forEach((item, i) => {
-      const el = (id) => document.getElementById(prefix + '-' + id + '-' + i);
-      const titleEl = el('title'), descEl = el('desc'), imgEl = el('img'),
-            agoEl = el('ago'), bgEl = el('bg');
-      if (titleEl) titleEl.textContent = item.title;
-      if (agoEl) { agoEl.textContent = timeAgo(item.pubDate); agoEl.dataset.pubdate = item.pubDate; }
-      if (descEl) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = item.description;
-        descEl.textContent = tmp.textContent || tmp.innerText || '';
-      }
-      let src = item.thumbnail || item.enclosure?.link || '';
-      if (!src) {
-        const m = item.description?.match(/<img[^>]+src="([^"]+)"/);
-        src = m ? m[1] : PLACEHOLDER;
-      }
-      if (imgEl) imgEl.src = src;
-      if (bgEl) bgEl.style.backgroundImage = 'url(' + src + ')';
-    });
-  } catch(e) { console.warn('News error (' + prefix + '):', e); }
-}
-
-function loadAllNews() {
-  fetchNews('https://feeds.nos.nl/nosnieuwsalgemeen', 'nos', 2);
-  fetchNews('https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml', 'nyt', 2);
-  fetchNews('https://feeds.skynews.com/feeds/rss/home.xml', 'sky', 2);
-  fetchNews('https://www.bright.nl/rss', 'bright', 2);
-}
-loadAllNews();
-setInterval(loadAllNews, 300000);
-
-// ═══ AUTO-SCROLL — slow & graceful ═══
-function startAutoScroll(slideEl) {
-  const wrap = slideEl.querySelector('.news-desc-wrap');
-  if (!wrap) return;
-  const p = wrap.querySelector('p');
-  if (!p) return;
-  p.style.transition = 'none';
-  p.style.transform = 'translateY(0)';
-  void p.offsetHeight;
-  const overflow = p.scrollHeight - wrap.clientHeight;
-  if (overflow > 20) {
-    // Slow scroll: ~30px per second, starts after 3s
-    const duration = overflow / 30;
-    setTimeout(() => {
-      p.style.transition = 'transform ' + duration + 's linear';
-      p.style.transform = 'translateY(-' + overflow + 'px)';
-    }, 3000);
+  if (items.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-icon empty-state-icon--ok">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' +
+        '</div>' +
+        '<div class="empty-state-text">Geen storingen op dit moment</div>' +
+      '</div>';
+    return;
   }
+
+  var html = '';
+  var max = Math.min(items.length, 5);
+  for (var j = 0; j < max; j++) {
+    var item = items[j];
+    var title = item.title || item.header || '';
+    var desc = item.description || item.summaryAdditionalTravelAdvice || item.consequence || '';
+    if (typeof desc === 'object' && desc.text) desc = desc.text;
+
+    html +=
+      '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(truncate(title, 80)) + '</div>' +
+        '<div class="card-description">' + escapeHtml(truncate(desc, 140)) + '</div>' +
+        '<div class="card-meta">' +
+          '<span class="badge badge--storing">' +
+            (item.type === 'CALAMITY' ? 'Calamiteit' : 'Storing') +
+          '</span>' +
+          (item.start ? '<span class="card-meta-dot"></span><span>' + timeAgo(new Date(item.start)) + '</span>' : '') +
+        '</div>' +
+      '</div>';
+  }
+  container.innerHTML = html;
 }
 
-// ═══ SLIDESHOW ═══
-const slides = document.querySelectorAll('.slide');
-let currentSlide = 0, progressTimer = null;
-const progressBar = document.getElementById('progress-bar');
+function renderWerkzaamheden(data) {
+  var container = document.getElementById('werkzaamheden-list');
+  var items = [];
 
-function showSlide(index) {
-  slides.forEach(s => s.classList.remove('active'));
-  slides[index].classList.add('active');
-  currentSlide = index;
-  const slideEl = slides[index];
-  startAutoScroll(slideEl);
-  const agoEl = slideEl.querySelector('.news-time-ago');
-  if (agoEl?.dataset.pubdate) agoEl.textContent = timeAgo(agoEl.dataset.pubdate);
-  const duration = parseInt(slideEl.dataset.duration) || 15000;
-  progressBar.style.transition = 'none';
-  progressBar.style.width = '0%';
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      progressBar.style.transition = 'width ' + duration + 'ms linear';
-      progressBar.style.width = '100%';
-    });
+  if (Array.isArray(data)) {
+    for (var i = 0; i < data.length; i++) {
+      if (data[i].type === 'WERKZAAMHEID' || data[i].type === 'MAINTENANCE') {
+        items.push(data[i]);
+      }
+    }
+  }
+
+  if (items.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-icon empty-state-icon--neutral">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+        '</div>' +
+        '<div class="empty-state-text">Geen werkzaamheden gepland</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  var max = Math.min(items.length, 5);
+  for (var j = 0; j < max; j++) {
+    var item = items[j];
+    var title = item.title || item.header || '';
+    var period = formatDateRange(item.start, item.end);
+
+    html +=
+      '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(truncate(title, 80)) + '</div>' +
+        (period ? '<div class="card-description">' + escapeHtml(period) + '</div>' : '') +
+        '<div class="card-meta">' +
+          '<span class="badge badge--werkzaamheid">Werkzaamheid</span>' +
+        '</div>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+}
+
+function fetchDisruptions() {
+  fetch(NS_API_BASE + '?actual=true', {
+    headers: { 'Ocp-Apim-Subscription-Key': NS_API_KEY }
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    renderStoringen(data);
+    renderWerkzaamheden(data);
+    updateTimestamp();
+  })
+  .catch(function(err) {
+    console.error('NS API fout:', err);
   });
-  clearTimeout(progressTimer);
-  progressTimer = setTimeout(() => showSlide((currentSlide + 1) % slides.length), duration);
 }
-showSlide(0);
+
+function parseRSS(xmlText, bron) {
+  var parser = new DOMParser();
+  var doc = parser.parseFromString(xmlText, 'text/xml');
+  var items = doc.querySelectorAll('item');
+  var results = [];
+
+  for (var i = 0; i < items.length && i < 10; i++) {
+    var titleEl = items[i].querySelector('title');
+    var pubDateEl = items[i].querySelector('pubDate');
+    var title = titleEl ? titleEl.textContent : '';
+    var pubDate = pubDateEl ? new Date(pubDateEl.textContent) : new Date(0);
+
+    results.push({
+      title: title,
+      date: pubDate,
+      bron: bron
+    });
+  }
+  return results;
+}
+
+function renderNieuws(allItems) {
+  var container = document.getElementById('nieuws-list');
+
+  allItems.sort(function(a, b) { return b.date - a.date; });
+
+  if (allItems.length === 0) {
+    container.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-icon empty-state-icon--neutral">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+        '</div>' +
+        '<div class="empty-state-text">Geen nieuws beschikbaar</div>' +
+      '</div>';
+    return;
+  }
+
+  var html = '';
+  var max = Math.min(allItems.length, 5);
+  for (var i = 0; i < max; i++) {
+    var item = allItems[i];
+    html +=
+      '<div class="card">' +
+        '<div class="card-title">' + escapeHtml(truncate(item.title, 90)) + '</div>' +
+        '<div class="card-meta">' +
+          '<span class="badge badge--bron">' + escapeHtml(item.bron) + '</span>' +
+          '<span class="card-meta-dot"></span>' +
+          '<span>' + timeAgo(item.date) + '</span>' +
+        '</div>' +
+      '</div>';
+  }
+  container.innerHTML = html;
+  updateTimestamp();
+}
+
+function fetchNieuws() {
+  var allItems = [];
+  var done = 0;
+  var total = RSS_FEEDS.length;
+
+  for (var i = 0; i < RSS_FEEDS.length; i++) {
+    (function(feed) {
+      fetch(PROXY + encodeURIComponent(feed.url))
+        .then(function(res) { return res.text(); })
+        .then(function(text) {
+          var items = parseRSS(text, feed.bron);
+          allItems = allItems.concat(items);
+        })
+        .catch(function(err) {
+          console.error('RSS fout (' + feed.bron + '):', err);
+        })
+        .finally(function() {
+          done++;
+          if (done === total) {
+            renderNieuws(allItems);
+          }
+        });
+    })(RSS_FEEDS[i]);
+  }
+}
+
+fetchDisruptions();
+fetchNieuws();
+
+setInterval(fetchDisruptions, 5 * 60 * 1000);
+setInterval(fetchNieuws, 10 * 60 * 1000);
 </script>
 </body>
 </html>
