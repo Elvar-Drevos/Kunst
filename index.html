@@ -19,7 +19,29 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
+.bg-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://images.unsplash.com/photo-1474487548417-781cb71495f3?w=1920&q=80') center center / cover no-repeat;
+  z-index: 0;
+}
+
+.bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(10,14,23,0.92) 0%, rgba(10,14,23,0.88) 50%, rgba(10,14,23,0.94) 100%);
+  z-index: 1;
+}
+
 .dashboard {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 32px;
@@ -76,6 +98,35 @@ html, body {
   color: #ffffff;
 }
 
+.column-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.column--storingen .column-count {
+  background: rgba(239,68,68,0.18);
+  color: #f87171;
+}
+
+.column--werkzaamheden .column-count {
+  background: rgba(245,158,11,0.18);
+  color: #fbbf24;
+}
+
+.column--nieuws .column-count {
+  background: rgba(59,130,246,0.15);
+  color: #60a5fa;
+}
+
 .column-subtitle {
   font-size: 13px;
   color: #6b7280;
@@ -97,7 +148,7 @@ html, body {
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
   padding: 18px 20px;
-  transition: background 0.2s;
+  backdrop-filter: blur(8px);
 }
 
 .card-title {
@@ -147,6 +198,11 @@ html, body {
 .badge--storing {
   background: rgba(239,68,68,0.12);
   color: #f87171;
+}
+
+.badge--phase {
+  background: rgba(34,197,94,0.12);
+  color: #4ade80;
 }
 
 .badge--werkzaamheid {
@@ -225,10 +281,14 @@ html, body {
   right: 24px;
   font-size: 11px;
   color: #4b5563;
+  z-index: 3;
 }
 </style>
 </head>
 <body>
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+
 <div class="dashboard">
 
   <div class="column column--storingen">
@@ -239,7 +299,7 @@ html, body {
           <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
       </div>
-      <div class="column-title">Actuele storingen</div>
+      <div class="column-title">Actuele storingen <span class="column-count" id="storingen-count">-</span></div>
       <div class="column-subtitle">Verstoringen op het spoor</div>
     </div>
     <div class="card-list" id="storingen-list">
@@ -254,7 +314,7 @@ html, body {
           <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
         </svg>
       </div>
-      <div class="column-title">Werkzaamheden</div>
+      <div class="column-title">Werkzaamheden <span class="column-count" id="werkzaamheden-count">-</span></div>
       <div class="column-subtitle">Gepland onderhoud</div>
     </div>
     <div class="card-list" id="werkzaamheden-list">
@@ -285,18 +345,17 @@ html, body {
 <script>
 var NS_API_BASE = 'https://gateway.apiportal.ns.nl/reisinformatie-api/api/v3/disruptions';
 var NS_API_KEY = 'ee26abae888b455e94bd6e22915603de';
-var PROXY = 'https://api.allorigins.win/raw?url=';
+var RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
 var RSS_FEEDS = [
-  { url: 'https://www.treinenweb.nl/rss.xml', bron: 'Treinenweb' },
   { url: 'https://www.treinreiziger.nl/feed/', bron: 'Treinreiziger' },
-  { url: 'https://www.ovnieuws.nl/feed/', bron: 'OVNieuws' },
   { url: 'https://www.spoorpro.nl/feed/', bron: 'Spoorpro' }
 ];
 
 function timeAgo(date) {
   var now = new Date();
   var diff = Math.floor((now - date) / 1000);
+  if (diff < 0) diff = 0;
   if (diff < 60) return 'zojuist';
   if (diff < 3600) return Math.floor(diff / 60) + ' min geleden';
   if (diff < 86400) return Math.floor(diff / 3600) + ' uur geleden';
@@ -310,9 +369,13 @@ function escapeHtml(str) {
   return el.innerHTML;
 }
 
-function truncate(str, len) {
+function stripHtml(str) {
   if (!str) return '';
-  str = str.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  return str.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#8217;/g, "'").replace(/&#8211;/g, '-').replace(/&#8230;/g, '...').replace(/\s+/g, ' ').trim();
+}
+
+function truncate(str, len) {
+  str = stripHtml(str);
   return str.length > len ? str.substring(0, len) + '...' : str;
 }
 
@@ -320,12 +383,10 @@ function formatDateRange(start, end) {
   var opts = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
   var s = '';
   if (start) {
-    var d = new Date(start);
-    s = d.toLocaleDateString('nl-NL', opts);
+    s = new Date(start).toLocaleDateString('nl-NL', opts);
   }
   if (end) {
-    var e = new Date(end);
-    s += ' t/m ' + e.toLocaleDateString('nl-NL', opts);
+    s += ' t/m ' + new Date(end).toLocaleDateString('nl-NL', opts);
   }
   return s;
 }
@@ -336,17 +397,48 @@ function updateTimestamp() {
   document.getElementById('update-time').textContent = 'Laatst bijgewerkt: ' + t;
 }
 
+function getDisruptionDescription(item) {
+  var parts = [];
+
+  if (item.timespans && item.timespans.length > 0) {
+    var ts = item.timespans[0];
+    if (ts.cause && ts.cause.label) {
+      parts.push(ts.cause.label.charAt(0).toUpperCase() + ts.cause.label.slice(1));
+    }
+    if (ts.situation && ts.situation.label) {
+      parts.push(ts.situation.label);
+    }
+    if (ts.additionalTravelTime && ts.additionalTravelTime.label) {
+      parts.push(ts.additionalTravelTime.label);
+    }
+  }
+
+  if (parts.length === 0 && item.expectedDuration && item.expectedDuration.description) {
+    parts.push(item.expectedDuration.description);
+  }
+
+  return parts.join(' - ');
+}
+
+function getPhaseLabel(item) {
+  if (item.phase && item.phase.label) return item.phase.label;
+  return null;
+}
+
 function renderStoringen(data) {
   var container = document.getElementById('storingen-list');
+  var countEl = document.getElementById('storingen-count');
   var items = [];
 
   if (Array.isArray(data)) {
     for (var i = 0; i < data.length; i++) {
-      if (data[i].type === 'STORING' || data[i].type === 'CALAMITY') {
+      if (data[i].type === 'DISRUPTION' || data[i].type === 'CALAMITY') {
         items.push(data[i]);
       }
     }
   }
+
+  countEl.textContent = items.length;
 
   if (items.length === 0) {
     container.innerHTML =
@@ -363,36 +455,44 @@ function renderStoringen(data) {
   var max = Math.min(items.length, 5);
   for (var j = 0; j < max; j++) {
     var item = items[j];
-    var title = item.title || item.header || '';
-    var desc = item.description || item.summaryAdditionalTravelAdvice || item.consequence || '';
-    if (typeof desc === 'object' && desc.text) desc = desc.text;
+    var title = item.title || '';
+    var desc = getDisruptionDescription(item);
+    var phase = getPhaseLabel(item);
 
-    html +=
-      '<div class="card">' +
-        '<div class="card-title">' + escapeHtml(truncate(title, 80)) + '</div>' +
-        '<div class="card-description">' + escapeHtml(truncate(desc, 140)) + '</div>' +
-        '<div class="card-meta">' +
-          '<span class="badge badge--storing">' +
-            (item.type === 'CALAMITY' ? 'Calamiteit' : 'Storing') +
-          '</span>' +
-          (item.start ? '<span class="card-meta-dot"></span><span>' + timeAgo(new Date(item.start)) + '</span>' : '') +
-        '</div>' +
-      '</div>';
+    html += '<div class="card">';
+    html += '<div class="card-title">' + escapeHtml(truncate(title, 80)) + '</div>';
+    if (desc) {
+      html += '<div class="card-description">' + escapeHtml(truncate(desc, 160)) + '</div>';
+    }
+    html += '<div class="card-meta">';
+    if (phase) {
+      var isOver = phase.toLowerCase().indexOf('voorbij') !== -1;
+      html += '<span class="badge ' + (isOver ? 'badge--phase' : 'badge--storing') + '">' + escapeHtml(phase) + '</span>';
+    } else {
+      html += '<span class="badge badge--storing">' + (item.type === 'CALAMITY' ? 'Calamiteit' : 'Storing') + '</span>';
+    }
+    if (item.start) {
+      html += '<span class="card-meta-dot"></span><span>' + timeAgo(new Date(item.start)) + '</span>';
+    }
+    html += '</div></div>';
   }
   container.innerHTML = html;
 }
 
 function renderWerkzaamheden(data) {
   var container = document.getElementById('werkzaamheden-list');
+  var countEl = document.getElementById('werkzaamheden-count');
   var items = [];
 
   if (Array.isArray(data)) {
     for (var i = 0; i < data.length; i++) {
-      if (data[i].type === 'WERKZAAMHEID' || data[i].type === 'MAINTENANCE') {
+      if (data[i].type === 'MAINTENANCE') {
         items.push(data[i]);
       }
     }
   }
+
+  countEl.textContent = items.length;
 
   if (items.length === 0) {
     container.innerHTML =
@@ -409,7 +509,7 @@ function renderWerkzaamheden(data) {
   var max = Math.min(items.length, 5);
   for (var j = 0; j < max; j++) {
     var item = items[j];
-    var title = item.title || item.header || '';
+    var title = item.title || '';
     var period = formatDateRange(item.start, item.end);
 
     html +=
@@ -437,27 +537,6 @@ function fetchDisruptions() {
   .catch(function(err) {
     console.error('NS API fout:', err);
   });
-}
-
-function parseRSS(xmlText, bron) {
-  var parser = new DOMParser();
-  var doc = parser.parseFromString(xmlText, 'text/xml');
-  var items = doc.querySelectorAll('item');
-  var results = [];
-
-  for (var i = 0; i < items.length && i < 10; i++) {
-    var titleEl = items[i].querySelector('title');
-    var pubDateEl = items[i].querySelector('pubDate');
-    var title = titleEl ? titleEl.textContent : '';
-    var pubDate = pubDateEl ? new Date(pubDateEl.textContent) : new Date(0);
-
-    results.push({
-      title: title,
-      date: pubDate,
-      bron: bron
-    });
-  }
-  return results;
 }
 
 function renderNieuws(allItems) {
@@ -501,11 +580,19 @@ function fetchNieuws() {
 
   for (var i = 0; i < RSS_FEEDS.length; i++) {
     (function(feed) {
-      fetch(PROXY + encodeURIComponent(feed.url))
-        .then(function(res) { return res.text(); })
-        .then(function(text) {
-          var items = parseRSS(text, feed.bron);
-          allItems = allItems.concat(items);
+      fetch(RSS2JSON + encodeURIComponent(feed.url))
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          if (data.status === 'ok' && data.items) {
+            for (var k = 0; k < data.items.length; k++) {
+              var ri = data.items[k];
+              allItems.push({
+                title: stripHtml(ri.title || ''),
+                date: new Date(ri.pubDate),
+                bron: feed.bron
+              });
+            }
+          }
         })
         .catch(function(err) {
           console.error('RSS fout (' + feed.bron + '):', err);
