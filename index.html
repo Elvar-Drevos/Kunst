@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1920">
 <title>Spoor Dashboard</title>
+<meta http-equiv="Content-Language" content="nl">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -167,6 +168,14 @@ html, body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.card-duration {
+  font-size: 12px;
+  color: #f59e0b;
+  margin-top: 8px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .card-meta {
@@ -343,13 +352,15 @@ html, body {
 <div class="update-time" id="update-time"></div>
 
 <script>
-var NS_API_BASE = 'https://gateway.apiportal.ns.nl/reisinformatie-api/api/v3/disruptions';
-var NS_API_KEY = 'ee26abae888b455e94bd6e22915603de';
+var NS_API_BASE = 'https://gateway.apiportal.ns.nl/disruptions/v3';
+var NS_API_KEY = '6095d25bf06843e49be1abc6dc899702';
 var RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
 var RSS_FEEDS = [
   { url: 'https://www.treinreiziger.nl/feed/', bron: 'Treinreiziger' },
-  { url: 'https://www.spoorpro.nl/feed/', bron: 'Spoorpro' }
+  { url: 'https://www.spoorpro.nl/feed/', bron: 'Spoorpro' },
+  { url: 'https://www.treinenweb.nl/rss', bron: 'Treinenweb' },
+  { url: 'http://treineninnederland.nl/feed.xml', bron: 'Treinen in NL' }
 ];
 
 function timeAgo(date) {
@@ -379,22 +390,29 @@ function truncate(str, len) {
   return str.length > len ? str.substring(0, len) + '...' : str;
 }
 
+var NL_MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+function nlDateTime(d) {
+  var dt = new Date(d);
+  var day = dt.getDate();
+  var mon = NL_MONTHS[dt.getMonth()];
+  var h = ('0' + dt.getHours()).slice(-2);
+  var m = ('0' + dt.getMinutes()).slice(-2);
+  return day + ' ' + mon + ', ' + h + ':' + m;
+}
+
 function formatDateRange(start, end) {
-  var opts = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
   var s = '';
-  if (start) {
-    s = new Date(start).toLocaleDateString('nl-NL', opts);
-  }
-  if (end) {
-    s += ' t/m ' + new Date(end).toLocaleDateString('nl-NL', opts);
-  }
+  if (start) s = nlDateTime(start);
+  if (end) s += ' t/m ' + nlDateTime(end);
   return s;
 }
 
 function updateTimestamp() {
   var now = new Date();
-  var t = now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
-  document.getElementById('update-time').textContent = 'Laatst bijgewerkt: ' + t;
+  var h = ('0' + now.getHours()).slice(-2);
+  var m = ('0' + now.getMinutes()).slice(-2);
+  document.getElementById('update-time').textContent = 'Laatst bijgewerkt: ' + h + ':' + m;
 }
 
 function getDisruptionDescription(item) {
@@ -464,6 +482,9 @@ function renderStoringen(data) {
     if (desc) {
       html += '<div class="card-description">' + escapeHtml(truncate(desc, 160)) + '</div>';
     }
+    if (item.expectedDuration && item.expectedDuration.description) {
+      html += '<div class="card-duration">' + escapeHtml(item.expectedDuration.description) + '</div>';
+    }
     html += '<div class="card-meta">';
     if (phase) {
       var isOver = phase.toLowerCase().indexOf('voorbij') !== -1;
@@ -524,11 +545,30 @@ function renderWerkzaamheden(data) {
   container.innerHTML = html;
 }
 
+function showDisruptionsError(msg) {
+  var html =
+    '<div class="empty-state">' +
+      '<div class="empty-state-icon empty-state-icon--neutral">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+      '</div>' +
+      '<div class="empty-state-text">' + escapeHtml(msg) + '</div>' +
+    '</div>';
+  document.getElementById('storingen-list').innerHTML = html;
+  document.getElementById('werkzaamheden-list').innerHTML = html;
+}
+
 function fetchDisruptions() {
   fetch(NS_API_BASE + '?actual=true', {
-    headers: { 'Ocp-Apim-Subscription-Key': NS_API_KEY }
+    headers: { 'Ocp-Apim-Subscription-Key': NS_API_KEY, 'Accept-Language': 'nl' }
   })
-  .then(function(res) { return res.json(); })
+  .then(function(res) {
+    if (!res.ok) {
+      throw new Error(res.status === 401 || res.status === 403
+        ? 'NS-sleutel niet geautoriseerd (' + res.status + ')'
+        : 'NS API fout (' + res.status + ')');
+    }
+    return res.json();
+  })
   .then(function(data) {
     renderStoringen(data);
     renderWerkzaamheden(data);
@@ -536,6 +576,7 @@ function fetchDisruptions() {
   })
   .catch(function(err) {
     console.error('NS API fout:', err);
+    showDisruptionsError(err.message || 'Verbinding met NS mislukt');
   });
 }
 
